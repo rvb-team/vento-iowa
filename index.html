@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vento Iowa">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230a0e14'/%3E%3Ccircle cx='50' cy='40' r='26' fill='%23ffd23f'/%3E%3Crect x='44' y='68' width='12' height='10' rx='2' fill='%233fa7ff'/%3E%3Cline x1='34' y1='58' x2='44' y2='70' stroke='%233fa7ff' stroke-width='3'/%3E%3Cline x1='66' y1='58' x2='56' y2='70' stroke='%233fa7ff' stroke-width='3'/%3E%3C/svg%3E">
+<title>Perfil de Vento — National Balloon Classic</title>
+<style>
+  :root{
+    --bg:#0a0e14;--panel:#111722;--panel2:#0d121b;--line:#1e2735;
+    --ink:#e8edf4;--dim:#8a98ac;--accent:#ffd23f;--accent2:#3fa7ff;--vai:#41d18a;--bad:#ff5468;
+    --mono:'SF Mono','JetBrains Mono','Fira Code',ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(63,167,255,.08), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(255,210,63,.06), transparent 55%),
+      var(--bg);
+    color:var(--ink);font-family:var(--mono);min-height:100vh;
+    padding:24px 16px 60px;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+  .kicker{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+  h1{font-size:23px;font-weight:700;margin:6px 0 16px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;}
+  h1 .sub{font-size:12px;font-weight:400;color:var(--dim);}
+  .tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+  .tab{flex:1 1 auto;background:var(--panel2);color:var(--dim);border:1px solid var(--line);
+    font-family:var(--mono);font-weight:700;font-size:13px;padding:11px 10px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .tab.active{background:linear-gradient(180deg,#ffe169,var(--accent));color:#1a1407;border-color:var(--accent);}
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+  .row3{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  @media(max-width:560px){
+    .row3{grid-template-columns:1fr 1fr;}
+    .row3 .field:first-child{grid-column:1 / -1;}
+  }
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field.full{grid-column:1 / -1;}
+  label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);}
+  input,select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+    font-family:var(--mono);font-size:14px;padding:11px 12px;border-radius:8px;outline:none;transition:.15s;width:100%;}
+  input:disabled{color:var(--dim);}
+  input:focus,select:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(63,167,255,.12);}
+  .note{font-size:11px;color:var(--dim);align-self:end;line-height:1.5;}
+  button{background:linear-gradient(180deg,#ffe169,var(--accent));color:#1a1407;border:none;
+    font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.04em;padding:13px 18px;border-radius:8px;
+    cursor:pointer;width:100%;transition:.1s;text-transform:uppercase;}
+  button:hover{filter:brightness(1.08);}button:active{transform:translateY(1px);}
+  button:disabled{filter:grayscale(.6) brightness(.7);cursor:wait;}
+  .btn-dat{background:linear-gradient(180deg,#5bd0ff,var(--accent2));color:#04141f;margin-top:14px;}
+  .btn-gps{background:var(--panel2);color:var(--ink);border:1px solid var(--line);text-transform:none;
+    font-weight:700;padding:11px 12px;}
+  .btn-gps:hover{border-color:var(--accent2);filter:none;background:#131b28;}
+  .modrow{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .btn-mod{margin-top:0;flex:1 1 0;min-width:120px;font-size:13px;padding:11px 8px;}
+  .meta{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--dim);
+    margin-top:16px;padding:10px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;}
+  .meta b{color:var(--ink);}
+  .gridwrap{overflow-x:auto;margin-top:12px;}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;font-size:13px;}
+  table.evo{min-width:600px;font-size:12px;}
+  th{padding:9px 11px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);
+    border-bottom:1px solid var(--line);background:var(--panel2);text-align:right;font-weight:700;}
+  th:first-child{text-align:left;}
+  table.evo th{text-align:center;}
+  table.evo th:first-child{text-align:left;}
+  th.sun{color:var(--accent);}
+  td{padding:5px 11px;text-align:right;border-bottom:1px solid rgba(30,39,53,.5);}
+  td.amsl{text-align:left;color:var(--dim);}
+  table.evo td{text-align:center;border-left:1px solid rgba(30,39,53,.5);}
+  table.evo td.amsl{border-left:none;}
+  td.spd,td .spd{font-variant-numeric:tabular-nums;color:#cfd8e3;}
+  .vai{color:var(--vai);font-weight:700;}
+  .arw{display:inline-block;font-weight:700;line-height:1;font-size:1.25em;margin-right:5px;}
+  .arwp{display:none;}
+  .mk{margin-left:5px;font-weight:800;}
+  .mkmax{color:var(--bad);}
+  .mkmin{opacity:.9;}
+  .mkmid{color:var(--accent);}
+  .vem{color:var(--dim);}
+  tr:last-child td{border-bottom:none;}
+  tr.solo td{font-weight:700;background:rgba(138,152,172,.08);}
+  tr.mar td{color:var(--accent2);font-size:11px;background:rgba(63,167,255,.05);border-bottom:none;}
+  tr.mar td.amsl{color:var(--accent2);font-weight:700;}
+  tr.subground td{color:#5a6678;font-size:11px;font-style:italic;background:repeating-linear-gradient(135deg,rgba(30,39,53,.25),rgba(30,39,53,.25) 6px,transparent 6px,transparent 12px);}
+  tr.subground td.amsl{color:#5a6678;font-style:normal;}
+  td.subsolo{text-align:center;letter-spacing:.05em;}
+  tr.bold td{font-weight:700;background:rgba(63,167,255,.07);}
+  tr.bold td.amsl{color:var(--accent2);}
+  tr.hero td{font-weight:800;background:rgba(255,210,63,.12);
+    border-top:1px solid rgba(255,210,63,.35);border-bottom:1px solid rgba(255,210,63,.35);}
+  tr.hero td.amsl{color:var(--accent);}
+  .legend{font-size:11px;color:var(--dim);margin-top:12px;line-height:1.6;}
+  .legend b.k1{color:var(--accent2);}.legend b.k2{color:var(--accent);}.legend b.kv{color:var(--vai);}.legend b.kt{color:var(--bad);}.legend b.kx{color:var(--bad);}.legend b.km{color:var(--vai);}.legend b.kd{color:var(--accent);}
+  tr.teto td{font-weight:700;background:rgba(255,84,104,.12);border-top:2px solid var(--bad);border-bottom:2px solid var(--bad);}
+  tr.teto td.amsl{color:var(--bad);}
+  .btn-pdf{background:var(--panel2);color:var(--ink);border:1px solid var(--line);margin-top:10px;}
+  .printhead{display:none;}
+  @media print{
+    @page{margin:12mm;}
+    body{background:#fff !important;color:#000 !important;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    #lock,.tabs,.controls,#go,.footer,.btn-dat,.btn-pdf,.modrow{display:none !important;}
+    #app{display:block !important;}
+    .kicker,h1{display:none;}
+    .printhead{display:block !important;margin-bottom:10px;}
+    .ph-t{font-size:15px;font-weight:700;color:#000;}
+    .ph-s{font-size:11px;color:#333;margin-top:3px;}
+    .meta{background:#f2f4f7 !important;color:#333 !important;border-color:#ccc !important;}
+    .meta b{color:#000 !important;}
+    .legend{color:#444 !important;}
+    table,table.evo{background:#fff !important;border-color:#999 !important;box-shadow:none;}
+    th{background:#eef1f5 !important;color:#333 !important;border-color:#bbb !important;}
+    td{border-color:#ddd !important;color:#000 !important;}
+    td.amsl,td .spd,.vem{color:#222 !important;}
+    .vai{color:#0a7d4f !important;}
+    tr.hero td{background:#fff4cc !important;}
+    tr.bold td{background:#e6f0fb !important;}
+    tr.teto td{background:#fde2e6 !important;border-color:#d22 !important;}
+    tr.mar td,tr.subground td{background:#f7f7f7 !important;color:#777 !important;}
+    .gridwrap{overflow:visible !important;}
+    .arw{display:none !important;}
+    .arwp{display:inline-block !important;margin-right:5px;font-weight:700;}
+    .mkmax{color:#d22 !important;}
+    .mkmid{color:#b8860b !important;}
+  }
+  .err{background:rgba(255,84,104,.1);border:1px solid rgba(255,84,104,.4);color:#ffb3bd;
+    padding:14px 16px;border-radius:8px;font-size:13px;margin-top:16px;}
+  .spin{display:inline-block;animation:sp 1s linear infinite;}@keyframes sp{to{transform:rotate(360deg);}}
+  .footer{margin-top:26px;font-size:10px;color:#4a5568;text-align:center;letter-spacing:.05em;}
+  #lock{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;
+    background:
+      radial-gradient(1000px 500px at 50% -10%, rgba(63,167,255,.10), transparent 60%),
+      var(--bg);padding:20px;}
+  #lock .box{width:100%;max-width:380px;text-align:center;}
+  #lock .lk{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+  #lock h2{font-size:22px;font-weight:700;margin:8px 0 22px;}
+  #lock input{width:100%;text-align:center;letter-spacing:.18em;font-size:16px;margin-bottom:12px;}
+  #lock .msg{font-size:12px;color:var(--bad);min-height:16px;margin-top:10px;}
+  #app{display:block;}
+  @media(max-width:560px){.controls{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="wrap">
+  <div class="kicker">Balloon Classic · Indianola, Iowa · Perfil Vertical</div>
+  <h1>Perfil de Vento <span class="sub">Open-Meteo · roda offline no navegador</span></h1>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="0" onclick="setTab(0)">1 · Previsão (3 modelos)</button>
+    <button class="tab" data-tab="1" onclick="setTab(1)">2 · Evolução do voo</button>
+    <button class="tab" data-tab="2" onclick="setTab(2)">3 · Plotagem oziTarget</button>
+    <button class="tab" data-tab="3" onclick="setTab(3)">4 · Dias (evento)</button>
+  </div>
+
+  <div class="controls">
+    <div class="row3">
+      <div class="field"><label>Localização</label>
+        <button type="button" class="btn-gps" id="gps" onclick="pegarGPS()">📍 Minha localização</button>
+      </div>
+      <div class="field"><label>Latitude</label><input id="lat" value="41.3595"></div>
+      <div class="field"><label>Longitude</label><input id="lon" value="-93.5216"></div>
+    </div>
+    <div class="field"><label>Dia</label><input id="dia" type="date"></div>
+    <div class="field" id="horaField"><label>Hora (local)</label><select id="hora"></select></div>
+    <div class="field full" id="modeloField"><label>Modelo</label>
+      <select id="modelo">
+        <option value="best_match">Best match (automático)</option>
+        <option value="icon_seamless">DWD ICON</option>
+        <option value="gfs_seamless">NOAA GFS</option>
+        <option value="ecmwf_ifs025">ECMWF IFS</option>
+      </select>
+    </div>
+    <div class="field full note" id="noteEvo" style="display:none;">
+      Janela automática: nascer do sol → +3h · Consenso de 3 modelos (ICON · GFS · ECMWF) por média vetorial.
+    </div>
+    <div class="field full note" id="notePrev">
+      Comparação lado a lado dos 3 modelos (ICON · GFS · ECMWF), na hora escolhida.
+    </div>
+    <div class="field" id="deField" style="display:none;"><label>De (dia)</label><input id="de" type="date"></div>
+    <div class="field" id="ateField" style="display:none;"><label>Até (dia)</label><input id="ate" type="date"></div>
+    <div class="field full note" id="noteDias" style="display:none;">
+      Paralelo por dia, voo da manhã (nascer do sol de cada dia) · Consenso de 3 modelos · até o teto.
+    </div>
+  </div>
+  <button id="go" onclick="rodar()">⟳ Gerar</button>
+
+  <div id="saida" style="margin-top:4px;"></div>
+  <div class="footer">Dados: Open-Meteo (CC BY 4.0) · 4 abas · .dat compatível com oziTarget/WindReader</div>
+</div>
+</div>
+
+<script>
+const M_PER_FT=0.3048;
+const HEIGHTS=[10,80,120,180];
+const HPA=[1000,975,950,925,900,850,800,750,700];
+const BOLD=[1500,2000,3000,4000,5000,6000,7000];
+const HERO=-1;   // sem camada "mais definida" definida p/ Iowa (só destaques de 1000 em 1000)
+const TETO=8000;   // teto legal — não pode passar
+const TOPO=8500;   // topo da tabela (margem acima do teto)
+const BLEND=["icon_seamless","gfs_seamless","ecmwf_ifs025"];
+const BLEND_NAMES=["ICON","GFS","ECMWF"];
+const R=Math.PI/180;
+const toDir=d=>(d+180)%360;          // pra onde VAI
+let TAB=0, STATE=null;
+
+(function init(){
+  const now=new Date();
+  const local=new Date(now-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  document.getElementById('dia').value=local;
+  const sel=document.getElementById('hora');
+  for(let h=0;h<24;h++){const o=document.createElement('option');o.value=h;o.textContent=String(h).padStart(2,'0')+':00';sel.appendChild(o);}
+  sel.value=now.getHours();
+  // período do evento (National Balloon Classic: 31/07 a 08/08)
+  const yr=local.slice(0,4);
+  document.getElementById('de').value=`${yr}-07-31`;
+  document.getElementById('ate').value=`${yr}-08-08`;
+})();
+
+function setTab(t){
+  TAB=t;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', +b.dataset.tab===t));
+  document.getElementById('horaField').style.display   = (t===1||t===3)?'none':'flex';
+  document.getElementById('modeloField').style.display = (t===2)?'flex':'none';
+  document.getElementById('deField').style.display     = (t===3)?'flex':'none';
+  document.getElementById('ateField').style.display    = (t===3)?'flex':'none';
+  document.getElementById('noteEvo').style.display     = (t===1)?'block':'none';
+  document.getElementById('notePrev').style.display    = (t===0)?'block':'none';
+  document.getElementById('noteDias').style.display    = (t===3)?'block':'none';
+  document.getElementById('saida').innerHTML='';
+  STATE=null;
+}
+
+function interpDir(d1,d2,t){
+  const x=(1-t)*Math.cos(d1*R)+t*Math.cos(d2*R);
+  const y=(1-t)*Math.sin(d1*R)+t*Math.sin(d2*R);
+  return (Math.atan2(y,x)/R+360)%360;
+}
+function interpPerfil(P0,alvoM){
+  const P=P0.slice().sort((a,b)=>a.agl-b.agl);
+  if(!P.length)return null;
+  if(P.length===1)return{d:P[0].d,s:P[0].s};
+  if(alvoM<=P[0].agl)return{d:P[0].d,s:P[0].s};
+  if(alvoM>=P[P.length-1].agl)return{d:P[P.length-1].d,s:P[P.length-1].s};
+  for(let k=0;k<P.length-1;k++){
+    if(alvoM>=P[k].agl&&alvoM<=P[k+1].agl){
+      const t=(alvoM-P[k].agl)/(P[k+1].agl-P[k].agl);
+      return{d:interpDir(P[k].d,P[k+1].d,t),s:P[k].s+t*(P[k+1].s-P[k].s)};
+    }
+  }
+  return{d:P[P.length-1].d,s:P[P.length-1].s};
+}
+function pegarGPS(){
+  const btn=document.getElementById('gps'),out=document.getElementById('saida');
+  if(!navigator.geolocation){
+    out.innerHTML='<div class="err">Este navegador não tem GPS/localização.</div>';return;
+  }
+  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> pegando…';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      document.getElementById('lat').value=pos.coords.latitude.toFixed(4);
+      document.getElementById('lon').value=pos.coords.longitude.toFixed(4);
+      btn.disabled=false;btn.innerHTML='📍 Minha localização';
+      out.innerHTML='';
+    },
+    err=>{
+      btn.disabled=false;btn.innerHTML='📍 Minha localização';
+      out.innerHTML=`<div class="err">${err.code===1
+        ?'Permissão de localização negada — libere no navegador.'
+        :'Não consegui pegar a localização ('+err.message+').'}</div>`;
+    },
+    {enableHighAccuracy:true,timeout:10000,maximumAge:60000}
+  );
+}
+
+function perfilDeHourly(h,elev,i){
+  const L=[];
+  HEIGHTS.forEach(m=>{const s=h[`wind_speed_${m}m`]?.[i],d=h[`wind_direction_${m}m`]?.[i];if(s!=null&&d!=null)L.push({agl:m,s,d});});
+  HPA.forEach(p=>{const gp=h[`geopotential_height_${p}hPa`]?.[i],s=h[`wind_speed_${p}hPa`]?.[i],d=h[`wind_direction_${p}hPa`]?.[i];if(s!=null&&d!=null&&gp!=null)L.push({agl:gp-elev,s,d});});
+  return L.filter(l=>l.agl>=-20).sort((a,b)=>a.agl-b.agl);
+}
+function blendAt(perfis,alvoM){
+  let vx=0,vy=0,n=0;
+  perfis.forEach(P=>{const v=interpPerfil(P,alvoM);if(v){vx+=v.s*Math.cos(v.d*R);vy+=v.s*Math.sin(v.d*R);n++;}});
+  if(!n)return null;vx/=n;vy/=n;
+  return{d:(Math.atan2(vy,vx)/R+360)%360,s:Math.hypot(vx,vy)};
+}
+
+async function fetchModel(lat,lon,dia,model){
+  const hVars=[];
+  HEIGHTS.forEach(h=>hVars.push(`wind_speed_${h}m`,`wind_direction_${h}m`));
+  HPA.forEach(p=>hVars.push(`wind_speed_${p}hPa`,`wind_direction_${p}hPa`,`geopotential_height_${p}hPa`));
+  let url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    +`&hourly=${hVars.join(',')}&daily=sunrise&wind_speed_unit=kmh&timezone=America%2FChicago`
+    +`&start_date=${dia}&end_date=${dia}`;
+  if(model&&model!=='best_match')url+=`&models=${model}`;
+  const r=await fetch(url);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+async function fetchModelRange(lat,lon,start,end,model){
+  const hVars=[];
+  HEIGHTS.forEach(h=>hVars.push(`wind_speed_${h}m`,`wind_direction_${h}m`));
+  HPA.forEach(p=>hVars.push(`wind_speed_${p}hPa`,`wind_direction_${p}hPa`,`geopotential_height_${p}hPa`));
+  let url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    +`&hourly=${hVars.join(',')}&daily=sunrise&wind_speed_unit=kmh&timezone=America%2FChicago`
+    +`&start_date=${start}&end_date=${end}`;
+  if(model&&model!=='best_match')url+=`&models=${model}`;
+  const r=await fetch(url);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+
+async function rodar(){
+  const btn=document.getElementById('go'),out=document.getElementById('saida');
+  const lat=document.getElementById('lat').value.trim(),lon=document.getElementById('lon').value.trim();
+  const dia=document.getElementById('dia').value,hora=parseInt(document.getElementById('hora').value,10);
+  const modelo=document.getElementById('modelo').value;
+  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> buscando…';out.innerHTML='';
+  try{
+    if(TAB===0){
+      const datas=await Promise.all(BLEND.map(m=>fetchModel(lat,lon,dia,m).catch(()=>null)));
+      const ok=datas.map((d,idx)=>({d,name:BLEND_NAMES[idx]})).filter(x=>x.d);
+      if(!ok.length)throw new Error('Nenhum modelo respondeu.');
+      const elev=ok[0].d.elevation,elevFt=elev/M_PER_FT,sunrise=ok[0].d.daily?.sunrise?.[0];
+      const niveis=[];const baseFt=Math.ceil(elevFt/250)*250;
+      for(let amsl=baseFt;amsl<=TOPO;amsl+=250)niveis.push(amsl);
+      const cols=ok.map(o=>{
+        const perfil=perfilDeHourly(o.d.hourly,o.d.elevation,hora);
+        const cells=niveis.map(amsl=>interpPerfil(perfil,(amsl-elevFt)*M_PER_FT));
+        return{label:o.name,cells,perfil};
+      });
+      const soloCells=ok.map(o=>interpPerfil(perfilDeHourly(o.d.hourly,o.d.elevation,hora),0));
+      const t=ok[0].d.hourly.time[hora]?ok[0].d.hourly.time[hora].replace('T',' '):`${dia} ${String(hora).padStart(2,'0')}:00`;
+      STATE={kind:0,niveis,cols,soloCells,elev,elevFt,sunrise,tLabel:t,lat,lon};
+      renderPrevisao(out);
+    }else if(TAB===1){
+      const datas=await Promise.all(BLEND.map(m=>fetchModel(lat,lon,dia,m).catch(()=>null)));
+      const ok=datas.filter(Boolean);
+      if(!ok.length)throw new Error('Nenhum modelo respondeu.');
+      const elev=ok[0].elevation,elevFt=elev/M_PER_FT,sunrise=ok[0].daily?.sunrise?.[0];
+      let h0=new Date().getHours();
+      if(sunrise){const mt=sunrise.match(/T(\d{2}):(\d{2})/);if(mt)h0=Math.round(+mt[1]+(+mt[2])/60);}
+      const horas=[h0,h0+1,h0+2,h0+3].filter(x=>x>=0&&x<=23);
+      const niveis=[];const baseFt=Math.ceil(elevFt/500)*500;
+      for(let amsl=baseFt;amsl<=TOPO;amsl+=500)niveis.push(amsl);
+      const cols=horas.map(hh=>{
+        const perfis=ok.map(d=>perfilDeHourly(d.hourly,d.elevation,hh));
+        const cells=niveis.map(amsl=>blendAt(perfis,(amsl-elevFt)*M_PER_FT));
+        const label=ok[0].hourly.time[hh]?ok[0].hourly.time[hh].slice(11,16):`${String(hh).padStart(2,'0')}:00`;
+        return{label,cells};
+      });
+      const soloBlend=blendAt(ok.map(d=>perfilDeHourly(d.hourly,d.elevation,horas[0])),0);
+      STATE={kind:1,niveis,cols,soloBlend,elev,elevFt,sunrise,nModelos:ok.length,lat,lon,tLabel:`${dia} (nascer→+3h)`};
+      renderEvo(out);
+    }else if(TAB===2){
+      const data=await fetchModel(lat,lon,dia,modelo);
+      const elev=data.elevation,elevFt=elev/M_PER_FT;
+      const perfil=perfilDeHourly(data.hourly,elev,hora);
+      const sunrise=data.daily?.sunrise?.[0];
+      const grade=[];const baseFt=Math.ceil(elevFt/250)*250;
+      for(let amsl=baseFt;amsl<=TOPO;amsl+=250){
+        const v=interpPerfil(perfil,(amsl-elevFt)*M_PER_FT);
+        if(v)grade.push({amsl,aglFt:amsl-elevFt,d:v.d,s:v.s});
+      }
+      let solo=null;const vs=interpPerfil(perfil,0);if(vs)solo={d:vs.d,s:vs.s};
+      const t=data.hourly.time[hora]?data.hourly.time[hora].replace('T',' '):`${dia} ${String(hora).padStart(2,'0')}:00`;
+      STATE={kind:2,grade,solo,elev,elevFt,tLabel:t,sunrise,model:data.model_used||modelo,perfil,lat,lon};
+      renderPlot(out);
+    }else{
+      // Aba 4 — Dias: paralelo por dia, voo da manhã (nascer do sol), consenso 3 modelos
+      let de=document.getElementById('de').value, ate=document.getElementById('ate').value;
+      if(!de||!ate)throw new Error('Preencha as datas De e Até.');
+      // limite de alcance do modelo: ~16 dias a partir de hoje
+      const hoje=new Date(); hoje.setHours(0,0,0,0);
+      const limite=new Date(hoje); limite.setDate(limite.getDate()+15); // hoje + 15 = 16º dia
+      const dDe=new Date(de+'T00:00'), dAte=new Date(ate+'T00:00');
+      let aviso='';
+      if(dDe>limite){
+        throw new Error(`A data inicial (${de}) está além do alcance da previsão (~16 dias). Hoje o modelo só vai até ${limite.toISOString().slice(0,10)}. Aguarde os dias se aproximarem.`);
+      }
+      if(dAte>limite){
+        const ateOrig=ate;
+        ate=limite.toISOString().slice(0,10);
+        aviso=`⚠️ O modelo só alcança até ${ate}. As datas de ${ate} a ${ateOrig} ainda não têm previsão — mostrando até o limite. Reconsulte conforme o evento se aproxima.`;
+      }
+      const datas=await Promise.all(BLEND.map(m=>fetchModelRange(lat,lon,de,ate,m).catch(()=>null)));
+      const ok=datas.filter(Boolean);
+      if(!ok.length)throw new Error('Nenhum modelo respondeu. Verifique conexão/coordenada, ou a janela de datas pode estar fora do alcance.');
+      const elev=ok[0].elevation,elevFt=elev/M_PER_FT;
+      const dias=ok[0].daily?.time||[];
+      const sunrises=ok[0].daily?.sunrise||[];
+      const niveis=[];const baseFt=Math.ceil(elevFt/500)*500;
+      for(let amsl=baseFt;amsl<=TOPO;amsl+=500)niveis.push(amsl);
+      const cols=dias.map((diaStr,di)=>{
+        const sr=sunrises[di]||'';
+        const mt=sr.match(/T(\d{2}):(\d{2})/);
+        const hh=mt?Math.round(+mt[1]+(+mt[2])/60):7;
+        const alvo=`${diaStr}T${String(hh).padStart(2,'0')}:00`;
+        const idx=ok[0].hourly.time.indexOf(alvo);
+        const i=idx>=0?idx:di*24+hh;
+        const perfis=ok.map(d=>perfilDeHourly(d.hourly,d.elevation,i));
+        const cells=niveis.map(amsl=>blendAt(perfis,(amsl-elevFt)*M_PER_FT));
+        const dd=diaStr.slice(8,10),mm=diaStr.slice(5,7);
+        return{label:`${dd}/${mm}`,sr:sr.slice(11,16),cells};
+      });
+      STATE={kind:3,niveis,cols,elev,elevFt,nModelos:ok.length,lat,lon,tLabel:`${dias[0]||de} → ${dias[dias.length-1]||ate}`,aviso};
+      renderDias(out);
+    }
+  }catch(e){
+    out.innerHTML=`<div class="err"><b>Falhou:</b> ${e.message}<br><br>Verifique conexão/coordenada. Se persistir, troque o modelo.</div>`;
+  }finally{
+    btn.disabled=false;btn.innerHTML='⟳ Gerar';
+  }
+}
+
+function meta(s){
+  let m=`<div class="meta"><span>⛰️ Solo: <b>${Math.round(s.elevFt)} ft</b> (${Math.round(s.elev)} m)</span>`;
+  if(s.sunrise)m+=`<span>🌅 Nascer: <b>${s.sunrise.slice(11,16)}</b></span>`;
+  if(s.tLabel)m+=`<span>🕐 <b>${s.tLabel}</b></span>`;
+  if(s.model)m+=`<span>🛰️ <b>${s.model}</b></span>`;
+  if(s.nModelos)m+=`<span>🛰️ <b>${s.nModelos} modelos</b></span>`;
+  return m+'</div>';
+}
+const rowClass=amsl => amsl===HERO?'hero':(amsl===TETO?'teto':(BOLD.includes(amsl)?'bold':''));
+const amslLabel=amsl => amsl===TETO ? `${amsl} ft ⛔ TETO` : `${amsl} ft`;
+
+const TABNOME=["Previsão (3 modelos)","Evolução do voo","Plotagem oziTarget","Dias (evento)"];
+
+// degradê por ALTURA: base = verde, topo = vermelho (estilo oziTarget invertido)
+function corAltura(amsl, minA, maxA){
+  const t = maxA>minA ? (amsl-minA)/(maxA-minA) : 0;   // 0 = base, 1 = topo
+  const hue = 120 - Math.round(120*Math.min(1,Math.max(0,t))); // 120=verde -> 0=vermelho
+  return `hsl(${hue},85%,55%)`;
+}
+// marcadores de velocidade: índice do mais forte, mais fraco e intermediário (mediana)
+function marcadores(speeds){
+  const val=speeds.map((s,i)=>({s,i})).filter(x=>x.s!=null);
+  if(val.length<2) return {max:-1,min:-1,mid:-1};
+  const ord=val.slice().sort((a,b)=>a.s-b.s);
+  const min=ord[0].i, max=ord[ord.length-1].i;
+  const mediana=ord[Math.floor(ord.length/2)].s;
+  let mid=-1,melhor=Infinity;
+  val.forEach(x=>{
+    if(x.i===min||x.i===max) return;
+    const d=Math.abs(x.s-mediana);
+    if(d<melhor){melhor=d;mid=x.i;}
+  });
+  return {max,min,mid};
+}
+const MK={max:'<span class="mk mkmax">⚡</span>',min:'<span class="mk mkmin">🐢</span>',mid:'<span class="mk mkmid">●</span>'};
+function marcaDe(i,m){ return i===m.max?MK.max : i===m.min?MK.min : i===m.mid?MK.mid : ''; }
+function printHead(s){
+  return `<div class="printhead">
+    <div class="ph-t">RVB Team 🎈 · Indianola IA · Perfil de Vento — ${TABNOME[s.kind]}</div>
+    <div class="ph-s">📍 ${(+s.lat).toFixed(4)}, ${(+s.lon).toFixed(4)} · Solo ${Math.round(s.elevFt)} ft`
+    + (s.sunrise?` · Nascer ${s.sunrise.slice(11,16)}`:``)
+    + (s.tLabel?` · ${s.tLabel}`:``)
+    + (s.model?` · ${s.model}`:``)
+    + (s.nModelos?` · ${s.nModelos} modelos`:``)
+    + ` · Teto ${TETO} ft`
+    + `</div></div>`;
+}
+const btnPDF=`<button class="btn-pdf" onclick="window.print()">🖨 Baixar PDF (imprimir / salvar como PDF)</button>`;
+
+// (removidas as linhas de cabeçalho "nível do mar / abaixo do solo" a pedido)
+function topoMar(s, nCols){ return ''; }
+
+// seta pra onde o vento VAI. Tela: ➤ girado (preciso). PDF: glifo fixo de 8 direções (imprime certo).
+// cor = degradê por altura (verde na base -> vermelho no topo)
+function seta(toDeg, cor){
+  const d=((Math.round(toDeg)%360)+360)%360;
+  const g=['↑','↗','→','↘','↓','↙','←','↖'][Math.round(d/45)%8];
+  const st=cor?`;color:${cor}`:'';
+  return `<span class="arw" style="transform:rotate(${d-90}deg)${st}">➤</span><span class="arwp" style="${cor?`color:${cor}`:''}">${g}</span>`;
+}
+
+function renderPrevisao(out){
+  const s=STATE;
+  let head=`<th>AMSL</th>`;
+  s.cols.forEach(c=>head+=`<th>${c.label}</th>`);
+  let rows='';
+  const minA=s.niveis[0], maxA=s.niveis[s.niveis.length-1];
+  const marc=s.cols.map(c=>marcadores(c.cells.map(x=>x?x.s:null)));
+  const idx=s.niveis.map((_,i)=>i).reverse();
+  idx.forEach(ri=>{
+    const amsl=s.niveis[ri];
+    const cor=corAltura(amsl,minA,maxA);
+    let tds=`<td class="amsl">${amslLabel(amsl)}</td>`;
+    s.cols.forEach((c,ci)=>{
+      const cell=c.cells[ri];
+      if(!cell){tds+=`<td>—</td>`;return;}
+      const mk=marcaDe(ri,marc[ci]);
+      tds+=`<td>${seta(toDir(cell.d),cor)}<span class="vai">${Math.round(toDir(cell.d))}°</span> / <span class="vem">${Math.round(cell.d)}°</span>`
+        +`<br><span class="spd">${cell.s.toFixed(0)} km/h</span>${mk}</td>`;
+    });
+    rows+=`<tr class="${rowClass(amsl)}">${tds}</tr>`;
+  });
+  let soloTds=`<td class="amsl">SOLO ~${Math.round(s.elevFt)} ft</td>`;
+  s.cols.forEach((c,ci)=>{
+    const cell=s.soloCells[ci];
+    soloTds+= cell
+      ? `<td>${seta(toDir(cell.d),corAltura(minA,minA,maxA))}<span class="vai">${Math.round(toDir(cell.d))}°</span> / <span class="vem">${Math.round(cell.d)}°</span><br><span class="spd">${cell.s.toFixed(0)} km/h</span></td>`
+      : `<td>—</td>`;
+  });
+  rows+=`<tr class="solo">${soloTds}</tr>`;
+  const btnsModelo=s.cols.map((c,ci)=>
+    `<button class="btn-dat btn-mod" onclick="exportarModelo(${ci})">⬇ .dat ${c.label}</button>`
+  ).join('');
+  out.innerHTML=printHead(s)+meta(s)
+    +`<div class="gridwrap"><table class="evo"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
+    +`<div class="modrow">${btnsModelo}</div>`
+    +btnPDF
+    +`<div class="legend">Ordem <b>invertida</b>: mais alto em cima, solo embaixo. Seta em <b>degradê por altura</b> (verde na base → vermelho no topo). Marcadores por coluna: <b class="kx">⚡ mais forte</b> · <b class="km">🐢 mais fraco</b> · <b class="kd">● intermediário</b>. 250 ft até 8.500 ft AMSL · <b class="kt">teto 8.000 ft</b>. Destaques a cada 1.000 ft: <b class="k1">3.000/4.000/5.000/6.000/7.000</b>.<br><b>Exporte o .dat do modelo que estiver batendo melhor</b> com a sua medição (copinho/drone) — mesmo formato da aba 3: AMSL, 250 ft, direção indo para.<br>⚠️ Previsão, não medição.</div>`;
+}
+
+function renderEvo(out){
+  const s=STATE;
+  let head=`<th>AMSL</th>`;
+  s.cols.forEach((c,j)=>head+=`<th class="${j===0?'sun':''}">${c.label}${j===0?' ☀':''}</th>`);
+  let rows='';
+  const minA=s.niveis[0], maxA=s.niveis[s.niveis.length-1];
+  const marc=s.cols.map(c=>marcadores(c.cells.map(x=>x?x.s:null)));
+  const idx=s.niveis.map((_,i)=>i).reverse();
+  idx.forEach(ri=>{
+    const amsl=s.niveis[ri];
+    const cor=corAltura(amsl,minA,maxA);
+    let tds=`<td class="amsl">${amslLabel(amsl)}</td>`;
+    s.cols.forEach((c,ci)=>{
+      const cell=c.cells[ri];
+      if(!cell){tds+=`<td>—</td>`;return;}
+      const mk=marcaDe(ri,marc[ci]);
+      tds+=`<td>${seta(toDir(cell.d),cor)}<span class="vai">${Math.round(toDir(cell.d))}°</span>`
+        +`<br><span class="spd">${cell.s.toFixed(0)} km/h</span>${mk}</td>`;
+    });
+    rows+=`<tr class="${rowClass(amsl)}">${tds}</tr>`;
+  });
+  let soloTds=`<td class="amsl">SOLO ~${Math.round(s.elevFt)} ft</td>`;
+  s.cols.forEach(()=>{
+    soloTds+= s.soloBlend
+      ? `<td>${seta(toDir(s.soloBlend.d),corAltura(minA,minA,maxA))}<span class="vai">${Math.round(toDir(s.soloBlend.d))}°</span><br><span class="spd">${s.soloBlend.s.toFixed(0)} km/h</span></td>`
+      : `<td>—</td>`;
+  });
+  rows+=`<tr class="solo">${soloTds}</tr>`;
+  out.innerHTML=printHead(s)+meta(s)
+    +`<div class="gridwrap"><table class="evo"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
+    +btnPDF
+    +`<div class="legend">Ordem <b>invertida</b>: mais alto em cima. Seta em <b>degradê por altura</b> (verde base → vermelho topo). Consenso de ${s.nModelos} modelos, nascer do sol (☀) a +3h, 500 ft até 8.500 ft · <b class="kt">teto 8.000 ft</b>. Marcadores por horário: <b class="kx">⚡ mais forte</b> · <b class="km">🐢 mais fraco</b> · <b class="kd">● intermediário</b>. Destaques a cada 1.000 ft.<br>⚠️ Previsão, não medição.</div>`;
+}
+
+function renderDias(out){
+  const s=STATE;
+  let head=`<th>AMSL</th>`;
+  s.cols.forEach(c=>head+=`<th>${c.label}${c.sr?`<br><span style="color:var(--dim);font-weight:400">☀${c.sr}</span>`:''}</th>`);
+  let rows='';
+  const minA=s.niveis[0], maxA=s.niveis[s.niveis.length-1];
+  const idx=s.niveis.map((_,i)=>i).reverse();
+  idx.forEach(ri=>{
+    const amsl=s.niveis[ri];
+    const cor=corAltura(amsl,minA,maxA);
+    let tds=`<td class="amsl">${amslLabel(amsl)}</td>`;
+    s.cols.forEach(c=>{
+      const cell=c.cells[ri];
+      tds+= cell
+        ? `<td>${seta(toDir(cell.d),cor)}<span class="vai">${Math.round(toDir(cell.d))}°</span><br><span class="spd">${cell.s.toFixed(0)}</span></td>`
+        : `<td>—</td>`;
+    });
+    rows+=`<tr class="${rowClass(amsl)}">${tds}</tr>`;
+  });
+  out.innerHTML=printHead(s)+meta(s)
+    +(s.aviso?`<div class="err" style="background:rgba(255,210,63,.1);border-color:rgba(255,210,63,.4);color:#ffe08a;">${s.aviso}</div>`:'')
+    +`<div class="gridwrap"><table class="evo"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
+    +btnPDF
+    +`<div class="legend">Paralelo por dia do evento (☀ = nascer do sol, voo da manhã), consenso de ${s.nModelos} modelos, 500 ft até 8.500 ft · <b class="kt">teto 8.000 ft</b>. Cada célula: <b class="kv">pra onde vai°</b> em cima, velocidade (km/h) embaixo; seta em degradê por altura. <br>Veja a variação do vento ao longo dos dias do National Balloon Classic. ⚠️ Quanto mais longe o dia, menor a confiança — os últimos dias são tendência. Role na horizontal.</div>`;
+}
+
+
+function renderPlot(out){
+  const s=STATE;let rows='';
+  const minA=s.grade.length?s.grade[0].amsl:0, maxA=s.grade.length?s.grade[s.grade.length-1].amsl:1;
+  const marc=marcadores(s.grade.map(l=>l.s));
+  s.grade.map((l,i)=>({l,i})).reverse().forEach(({l,i})=>{
+    const cor=corAltura(l.amsl,minA,maxA);
+    const mk=marcaDe(i,marc);
+    rows+=`<tr class="${rowClass(l.amsl)}"><td class="amsl">${amslLabel(l.amsl)}</td><td>${Math.round(l.aglFt)} ft</td>`
+      +`<td>${seta(toDir(l.d),cor)}<span class="vai">${Math.round(toDir(l.d))}°</span></td><td><span class="vem">${Math.round(l.d)}°</span></td>`
+      +`<td class="spd">${l.s.toFixed(1)} km/h${mk}</td></tr>`;
+  });
+  if(s.solo){
+    rows+=`<tr class="solo"><td class="amsl">SOLO ~${Math.round(s.elevFt)} ft</td><td>0 ft</td>`
+      +`<td>${seta(toDir(s.solo.d),corAltura(minA,minA,maxA))}<span class="vai">${Math.round(toDir(s.solo.d))}°</span></td><td><span class="vem">${Math.round(s.solo.d)}°</span></td>`
+      +`<td class="spd">${s.solo.s.toFixed(1)} km/h</td></tr>`;
+  }
+  out.innerHTML=printHead(s)+meta(s)
+    +`<table><thead><tr><th>AMSL</th><th>AGL</th><th>Vai →</th><th>Vem ←</th><th>Velocidade</th></tr></thead><tbody>${rows}</tbody></table>`
+    +`<button class="btn-dat" onclick="exportarDat()">⬇ Exportar .dat (oziTarget / WindReader) — 250 ft até 6000 ft</button>`
+    +btnPDF
+    +`<div class="legend">Ordem <b>invertida</b>: mais alto em cima, solo embaixo. Seta em <b>degradê por altura</b> (verde base → vermelho topo). <b class="kv">Vai →</b> pra onde leva · <span class="vem">Vem ←</span> de onde sopra. Marcadores: <b class="kx">⚡ mais forte</b> · <b class="km">🐢 mais fraco</b> · <b class="kd">● intermediário</b>. 250 ft do solo até 8.500 ft AMSL · <b class="kt">teto 8.000 ft</b>. <b>SOLO</b> = estimativa.<br>O <b>.dat</b> sai sem cabeçalho, com coluna <b>AMSL [ft]</b> (nível do mar) e direção <b>indo para</b> (To).<br>⚠️ Previsão de modelo, não medição.</div>`;
+}
+
+// gera e baixa o .dat a partir de um perfil qualquer (usado pela aba 3 e por modelo na aba 1)
+function gerarDat(perfil, elev, tLabel, sufixo){
+  const M=M_PER_FT;
+  if(!perfil||perfil.length<2){alert('Perfil insuficiente.');return;}
+  const elevFt=elev/M, passoFt=250, tetoAmsl=TOPO;
+  const baseAmsl=Math.ceil(elevFt/passoFt)*passoFt;
+  const linhas=[];
+  for(let amsl=baseAmsl;amsl<=tetoAmsl;amsl+=passoFt){
+    const v=interpPerfil(perfil,(amsl-elevFt)*M); // interpola pela altura AGL real
+    if(v)linhas.push({ft:amsl,dir:toDir(v.d),spd:v.s});  // dir = TO (indo para)
+  }
+  let dataFmt=tLabel||'';
+  const m=(tLabel||'').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if(m)dataFmt=`${m[2]}/${m[3]}/${m[1].slice(2)} ${m[4]}:${m[5]}:00`;
+  let str='';
+  str+=`AMSL [ft]     Wind [°] Speed [km/h]\r\n`;
+  linhas.forEach(l=>{str+=`${String(l.ft).padStart(8)}${l.dir.toFixed(1).padStart(13)}${l.spd.toFixed(1).padStart(13)}\r\n`;});
+  const bytes=new Uint8Array(str.length);
+  for(let i=0;i<str.length;i++)bytes[i]=str.charCodeAt(i)&0xff;
+  const blob=new Blob([bytes],{type:'application/octet-stream'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const tag=sufixo?`_${sufixo}`:'';
+  a.download=`windwatch_previsao${tag}_${dataFmt.replace(/[/: ]/g,'-')}.dat`;
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+// Aba 3 — modelo único
+function exportarDat(){
+  const s=STATE;
+  if(!s||!s.perfil){alert('Gere a plotagem primeiro (aba 3).');return;}
+  gerarDat(s.perfil, s.elev, s.tLabel, '');
+}
+
+// Aba 1 — exporta o .dat de UM modelo específico (ci = índice da coluna)
+function exportarModelo(ci){
+  const s=STATE;
+  if(!s||s.kind!==0||!s.cols||!s.cols[ci]){alert('Gere a previsão primeiro (aba 1).');return;}
+  const c=s.cols[ci];
+  gerarDat(c.perfil, s.elev, s.tLabel, c.label);
+}
+</script>
+</body>
+</html>
