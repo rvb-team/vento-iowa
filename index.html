@@ -297,12 +297,14 @@ async function fetchModel(lat,lon,dia,model){
   HEIGHTS.forEach(h=>hVars.push(`wind_speed_${h}m`,`wind_direction_${h}m`));
   HPA.forEach(p=>hVars.push(`wind_speed_${p}hPa`,`wind_direction_${p}hPa`,`geopotential_height_${p}hPa`));
   let url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-    +`&hourly=${hVars.join(',')}&daily=sunrise&wind_speed_unit=kmh&timezone=America%2FChicago`
+    +`&hourly=${hVars.join(',')}&daily=sunrise&wind_speed_unit=kmh&timezone=auto`
     +`&start_date=${dia}&end_date=${dia}`;
   if(model&&model!=='best_match')url+=`&models=${model}`;
   const r=await fetch(url);
   if(!r.ok)throw new Error('HTTP '+r.status);
-  return r.json();
+  const j=await r.json();
+  if(j.timezone_abbreviation)TZLABEL=j.timezone_abbreviation;
+  return j;
 }
 
 async function fetchModelRange(lat,lon,start,end,model){
@@ -310,13 +312,17 @@ async function fetchModelRange(lat,lon,start,end,model){
   HEIGHTS.forEach(h=>hVars.push(`wind_speed_${h}m`,`wind_direction_${h}m`));
   HPA.forEach(p=>hVars.push(`wind_speed_${p}hPa`,`wind_direction_${p}hPa`,`geopotential_height_${p}hPa`));
   let url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-    +`&hourly=${hVars.join(',')}&daily=sunrise&wind_speed_unit=kmh&timezone=America%2FChicago`
+    +`&hourly=${hVars.join(',')}&daily=sunrise&wind_speed_unit=kmh&timezone=auto`
     +`&start_date=${start}&end_date=${end}`;
   if(model&&model!=='best_match')url+=`&models=${model}`;
   const r=await fetch(url);
   if(!r.ok)throw new Error('HTTP '+r.status);
-  return r.json();
+  const j=await r.json();
+  if(j.timezone_abbreviation)TZLABEL=j.timezone_abbreviation;
+  return j;
 }
+
+let TZLABEL='';
 
 
 async function rodar(){
@@ -425,7 +431,7 @@ async function rodar(){
 function meta(s){
   let m=`<div class="meta"><span>⛰️ Solo: <b>${Math.round(s.elevFt)} ft</b> (${Math.round(s.elev)} m)</span>`;
   if(s.sunrise)m+=`<span>🌅 Nascer: <b>${s.sunrise.slice(11,16)}</b></span>`;
-  if(s.tLabel)m+=`<span>🕐 <b>${s.tLabel}</b></span>`;
+  if(s.tLabel)m+=`<span>🕐 <b>${s.tLabel}</b>${TZLABEL?` <span style="color:var(--dim)">(${TZLABEL})</span>`:''}</span>`;
   if(s.model)m+=`<span>🛰️ <b>${s.model}</b></span>`;
   if(s.nModelos)m+=`<span>🛰️ <b>${s.nModelos} modelos</b></span>`;
   return m+'</div>';
