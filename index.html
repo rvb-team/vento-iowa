@@ -37,9 +37,19 @@
   .tab.active{background:linear-gradient(180deg,#ffe169,var(--accent));color:#1a1407;border-color:var(--accent);}
   .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
   .row3{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .row5{grid-column:1 / -1;display:grid;grid-template-columns:.7fr 1.1fr 1.1fr .8fr .8fr;gap:12px;}
+  #ctrlMapa{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+  #ctrlMapa .row5{grid-column:1 / -1;}
+  #saida #ctrlMapa{margin-top:16px;padding:12px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px 8px 0 0;border-bottom:none;}
+  #saida #ctrlMapa + #mapaWp{margin-top:0;border-radius:0 0 8px 8px;}
+  .utm-curto{font-size:19px !important;font-weight:800;color:var(--accent) !important;
+    letter-spacing:2px;text-align:center;}
   @media(max-width:560px){
     .row3{grid-template-columns:1fr 1fr;}
     .row3 .field:first-child{grid-column:1 / -1;}
+    .row5{grid-template-columns:1fr 1fr;}
+    .row5 .field:first-child{grid-column:1 / -1;}
   }
   .field{display:flex;flex-direction:column;gap:6px;}
   .field.full{grid-column:1 / -1;}
@@ -182,8 +192,8 @@
       <div class="field"><label>Localização</label>
         <button type="button" class="btn-gps" id="gps" onclick="pegarGPS()">📍 Minha localização</button>
       </div>
-      <div class="field"><label>Latitude</label><input id="lat" value="41.3595"></div>
-      <div class="field"><label>Longitude</label><input id="lon" value="-93.5216"></div>
+      <div class="field"><label>Latitude</label><input id="lat" value="41.3595" onchange="atualizarUTM()"></div>
+      <div class="field"><label>Longitude</label><input id="lon" value="-93.5216" onchange="atualizarUTM()"></div>
     </div>
     <div class="field"><label>Dia</label><input id="dia" type="date"></div>
     <div class="field" id="horaField"><label>Hora (local)</label><select id="hora"></select></div>
@@ -206,6 +216,20 @@
     <div class="field full note" id="noteDias" style="display:none;">
       Paralelo por dia, voo da manhã (nascer do sol de cada dia) · Consenso de 3 modelos · até o teto.
     </div>
+    <div class="field full note" id="noteMapa" style="display:none;">
+      Windpath: deriva projetada na subida contínua do solo ao teto (aba 1 = consenso dos 3 modelos; aba 3 = modelo escolhido). Cor por altura: verde = baixo, vermelho = teto. Linhas de decolagem = eixo do vento das 3 primeiras camadas, 4 km para cada lado. 👆 Clique em qualquer ponto do mapa para recalcular a partir dali.
+    </div>
+  </div>
+  <button id="go" onclick="rodar()">⟳ Gerar</button>
+
+  <div id="ctrlMapaHome"><div id="ctrlMapa">
+    <div class="row5">
+      <div class="field"><label>UTM zona</label><input id="utmz" readonly tabindex="-1"></div>
+      <div class="field"><label>UTM E <span style="color:var(--dim);font-weight:400">(aceita 4 díg.)</span></label><input id="utme" placeholder="ex.: 4939" onchange="aplicarUTM()"></div>
+      <div class="field"><label>UTM N <span style="color:var(--dim);font-weight:400">(aceita 4 díg.)</span></label><input id="utmn" placeholder="ex.: 8953" onchange="aplicarUTM()"></div>
+      <div class="field"><label>4/4 E</label><input id="utme4" class="utm-curto" readonly tabindex="-1"></div>
+      <div class="field"><label>4/4 N</label><input id="utmn4" class="utm-curto" readonly tabindex="-1"></div>
+    </div>
     <div class="field" id="subidaField" style="display:none;"><label>Razão de subida</label>
       <select id="subida">
         <option value="2">2 m/s</option>
@@ -214,12 +238,7 @@
         <option value="8">8 m/s</option>
       </select>
     </div>
-    <div class="field full note" id="noteMapa" style="display:none;">
-      Windpath: deriva projetada na subida contínua do solo ao teto (aba 1 = consenso dos 3 modelos; aba 3 = modelo escolhido). Cor por altura: verde = baixo, vermelho = teto. Linhas de decolagem = eixo do vento das 3 primeiras camadas, 4 km para cada lado.
-    </div>
-  </div>
-  <button id="go" onclick="rodar()">⟳ Gerar</button>
-
+  </div></div>
   <div id="saida" style="margin-top:4px;"></div>
   <div class="footer">Dados: Open-Meteo (CC BY 4.0) · 4 abas · .dat compatível com oziTarget/WindReader</div>
 </div>
@@ -239,6 +258,70 @@ const R=Math.PI/180;
 const toDir=d=>(d+180)%360;          // pra onde VAI
 let TAB=0, STATE=null, WPMAP=null;
 
+// ---------- UTM (WGS84) ----------
+function utmBand(lat){const b='CDEFGHJKLMNPQRSTUVWX';return b[Math.max(0,Math.min(19,Math.floor((lat+80)/8)))];}
+function latLonToUtm(lat,lon){
+  const z=Math.floor((lon+180)/6)+1, a=6378137, f=1/298.257223563, k0=0.9996;
+  const e2=f*(2-f), ep2=e2/(1-e2), lam0=((z-1)*6-180+3)*R;
+  const phi=lat*R, A=Math.cos(phi)*((lon*R)-lam0);
+  const Nr=a/Math.sqrt(1-e2*Math.sin(phi)**2), T=Math.tan(phi)**2, C=ep2*Math.cos(phi)**2;
+  const M=a*((1-e2/4-3*e2*e2/64-5*e2**3/256)*phi
+    -(3*e2/8+3*e2*e2/32+45*e2**3/1024)*Math.sin(2*phi)
+    +(15*e2*e2/256+45*e2**3/1024)*Math.sin(4*phi)
+    -(35*e2**3/3072)*Math.sin(6*phi));
+  const E=k0*Nr*(A+(1-T+C)*A**3/6+(5-18*T+T*T+72*C-58*ep2)*A**5/120)+500000;
+  let N=k0*(M+Nr*Math.tan(phi)*(A*A/2+(5-T+9*C+4*C*C)*A**4/24+(61-58*T+T*T+600*C-330*ep2)*A**6/720));
+  if(lat<0)N+=10000000;
+  return {z,band:utmBand(lat),E,N};
+}
+function utmToLatLon(z,E,N,sul){
+  const a=6378137, f=1/298.257223563, k0=0.9996;
+  const e2=f*(2-f), ep2=e2/(1-e2), e1=(1-Math.sqrt(1-e2))/(1+Math.sqrt(1-e2));
+  const x=E-500000, y=sul?N-10000000:N, M=y/k0;
+  const mu=M/(a*(1-e2/4-3*e2*e2/64-5*e2**3/256));
+  const phi1=mu+(3*e1/2-27*e1**3/32)*Math.sin(2*mu)+(21*e1*e1/16-55*e1**4/32)*Math.sin(4*mu)
+    +(151*e1**3/96)*Math.sin(6*mu)+(1097*e1**4/512)*Math.sin(8*mu);
+  const N1=a/Math.sqrt(1-e2*Math.sin(phi1)**2), T1=Math.tan(phi1)**2, C1=ep2*Math.cos(phi1)**2;
+  const R1=a*(1-e2)/Math.pow(1-e2*Math.sin(phi1)**2,1.5), D=x/(N1*k0);
+  const lat=phi1-(N1*Math.tan(phi1)/R1)*(D*D/2-(5+3*T1+10*C1-4*C1*C1-9*ep2)*D**4/24
+    +(61+90*T1+298*C1+45*T1*T1-252*ep2-3*C1*C1)*D**6/720);
+  const lon=((z-1)*6-180+3)*R+(D-(1+2*T1+C1)*D**3/6+(5-2*C1+28*T1-3*C1*C1+8*ep2+24*T1*T1)*D**5/120)/Math.cos(phi1);
+  return {lat:lat/R, lon:lon/R};
+}
+function quatroQuatro(v){return String(Math.floor((v%100000)/10)).padStart(4,'0');}
+function atualizarUTM(){
+  const la=parseFloat(document.getElementById('lat').value), lo=parseFloat(document.getElementById('lon').value);
+  if(isNaN(la)||isNaN(lo))return;
+  const u=latLonToUtm(la,lo);
+  document.getElementById('utmz').value=`${u.z}${u.band}`;
+  document.getElementById('utme').value=Math.round(u.E);
+  document.getElementById('utmn').value=Math.round(u.N);
+  document.getElementById('utme4').value=quatroQuatro(Math.round(u.E));
+  document.getElementById('utmn4').value=quatroQuatro(Math.round(u.N));
+}
+function aplicarUTM(){
+  const la=parseFloat(document.getElementById('lat').value), lo=parseFloat(document.getElementById('lon').value);
+  if(isNaN(la)||isNaN(lo)){atualizarUTM();return;} // precisa de referência para zona e regra 4/4
+  const ref=latLonToUtm(la,lo);
+  const dec=(s,refV)=>{
+    s=(s||'').replace(/\D/g,'');
+    if(s.length>=6)return parseFloat(s);
+    if(s.length===4){ // regra 4/4: dezenas de metro; completa com a centena de km mais próxima da referência
+      const base=Math.floor(refV/100000)*100000;
+      const cand=[base+(+s)*10, base+100000+(+s)*10, base-100000+(+s)*10];
+      return cand.reduce((a,b)=>Math.abs(b-refV)<Math.abs(a-refV)?b:a);
+    }
+    return NaN;
+  };
+  const E=dec(document.getElementById('utme').value,ref.E);
+  const N=dec(document.getElementById('utmn').value,ref.N);
+  if(isNaN(E)||isNaN(N)){atualizarUTM();return;}
+  const p=utmToLatLon(ref.z,E,N,la<0);
+  document.getElementById('lat').value=p.lat.toFixed(4);
+  document.getElementById('lon').value=p.lon.toFixed(4);
+  atualizarUTM();
+}
+
 (function init(){
   const now=new Date();
   const local=new Date(now-now.getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -251,10 +334,17 @@ let TAB=0, STATE=null, WPMAP=null;
   document.getElementById('de').value=`${yr}-07-31`;
   document.getElementById('ate').value=`${yr}-08-08`;
   setTab(0); // aplica a visibilidade dos campos da aba inicial (inclui razão de subida)
+  atualizarUTM();
 })();
+
+function reHomeCtrlMapa(){
+  const cm=document.getElementById('ctrlMapa'),home=document.getElementById('ctrlMapaHome');
+  if(cm&&home&&cm.parentElement!==home)home.appendChild(cm);
+}
 
 function setTab(t){
   TAB=t;
+  reHomeCtrlMapa();
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', +b.dataset.tab===t));
   document.getElementById('horaField').style.display   = (t===1||t===3)?'none':'flex';
   document.getElementById('modeloField').style.display = (t===2)?'flex':'none';
@@ -290,6 +380,7 @@ function interpPerfil(P0,alvoM){
   return{d:P[P.length-1].d,s:P[P.length-1].s};
 }
 function pegarGPS(){
+  reHomeCtrlMapa();
   const btn=document.getElementById('gps'),out=document.getElementById('saida');
   if(!navigator.geolocation){
     out.innerHTML='<div class="err">Este navegador não tem GPS/localização.</div>';return;
@@ -299,6 +390,7 @@ function pegarGPS(){
     pos=>{
       document.getElementById('lat').value=pos.coords.latitude.toFixed(4);
       document.getElementById('lon').value=pos.coords.longitude.toFixed(4);
+      atualizarUTM();
       btn.disabled=false;btn.innerHTML='📍 Minha localização';
       out.innerHTML='';
     },
@@ -369,6 +461,15 @@ function desenharWindpath(inicio,segs,marcas,linhas){
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
     maxZoom:19,attribution:'Imagens © Esri'
   }).addTo(WPMAP);
+  // clique no mapa = novo ponto de decolagem: preenche a coordenada e recalcula
+  WPMAP.on('click',e=>{
+    const go=document.getElementById('go');
+    if(go&&go.disabled)return; // já tem cálculo em andamento
+    document.getElementById('lat').value=e.latlng.lat.toFixed(4);
+    document.getElementById('lon').value=e.latlng.lng.toFixed(4);
+    atualizarUTM();
+    rodar();
+  });
   // linhas de decolagem (eixo do vento das camadas baixas) — desenhadas antes, a trajetória fica por cima
   const ponto=(base,brg,km)=>{
     const dLat=km*Math.cos(brg*R)/111.32;
@@ -430,7 +531,7 @@ function montarWindpath(ventoEm,elevFt,lat0,lon0,rateMs){
     if(!v)return;
     linhas.push({brg:toDir(v.d),s:v.s,cor:CORES_LINHA[i],ft:amsl});
   });
-  return {segs,marcas,linhas,totMin,totKm};
+  return {segs,marcas,linhas,totMin,totKm,elevFt};
 }
 
 // anexa mapa + legenda das linhas + resumo ao final da saída e desenha
@@ -445,10 +546,13 @@ function anexarWindpath(out,wp,lat0,lon0,rateMs,fonte){
     +`<div class="wp-info">`
     +`<span>🧭 <b>${fonte}</b></span>`
     +`<span>⬆️ <b>${rateMs} m/s</b></span>`
+    +`<span>⛰️ solo: <b>${Math.round(wp.elevFt)} ft</b> (${Math.round(wp.elevFt*M_PER_FT)} m)</span>`
+    +`<span>⛔ teto: <b>${TETO} ft</b></span>`
     +`<span>⏱️ solo→teto: <b>${Math.round(wp.totMin)} min</b></span>`
     +`<span>📏 deriva total: <b>${wp.totKm.toFixed(1)} km</b></span>`
-    +`<span>⛔ teto: <b>${TETO} ft</b></span>`
     +`</div>`);
+  const cm=document.getElementById('ctrlMapa');
+  if(cm)document.getElementById('mapaWp').before(cm);
   desenharWindpath([lat0,lon0],wp.segs,wp.marcas,wp.linhas);
 }
 
@@ -497,6 +601,7 @@ async function rodar(){
   const lat=document.getElementById('lat').value.trim(),lon=document.getElementById('lon').value.trim();
   const dia=document.getElementById('dia').value,hora=parseInt(document.getElementById('hora').value,10);
   const modelo=document.getElementById('modelo').value;
+  reHomeCtrlMapa();
   btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> buscando…';out.innerHTML='';
   try{
     WXLINE='';
