@@ -10,6 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Vento Iowa">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230a0e14'/%3E%3Ccircle cx='50' cy='40' r='26' fill='%23ffd23f'/%3E%3Crect x='44' y='68' width='12' height='10' rx='2' fill='%233fa7ff'/%3E%3Cline x1='34' y1='58' x2='44' y2='70' stroke='%233fa7ff' stroke-width='3'/%3E%3Cline x1='66' y1='58' x2='56' y2='70' stroke='%233fa7ff' stroke-width='3'/%3E%3C/svg%3E">
 <title>Perfil de Vento — National Balloon Classic</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root{
     --bg:#0a0e14;--panel:#111722;--panel2:#0d121b;--line:#1e2735;
@@ -61,6 +63,22 @@
   .meta{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--dim);
     margin-top:16px;padding:10px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;}
   .meta b{color:var(--ink);}
+  .wxline{margin-top:16px;padding:10px 12px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;font-size:12px;color:var(--dim);line-height:1.7;}
+  .wxline b{color:var(--ink);}
+  .wxline .wx-dim{color:var(--dim);}
+  .wxline .wx-alerta{color:#ffd23f;font-weight:700;}
+  .wxline + .meta{margin-top:8px;}
+  #mapaWp{height:420px;border-radius:8px;margin-top:12px;border:1px solid var(--line);background:#0d1320;}
+  .wp-info{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--dim);
+    margin-top:8px;padding:10px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;}
+  .wp-info b{color:var(--ink);}
+  .wp-legenda{display:flex;gap:8px 14px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--dim);
+    margin-top:8px;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;}
+  .wp-lg-t{font-weight:700;color:var(--ink);}
+  .wp-lg{display:inline-flex;align-items:center;gap:6px;color:var(--ink);font-weight:600;}
+  .wp-lg i{display:inline-block;width:18px;height:3px;border-radius:2px;}
+  @media(max-width:640px){#mapaWp{height:300px}}
   .gridwrap{overflow-x:auto;margin-top:12px;}
   table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);
     border-radius:10px;overflow:hidden;font-size:13px;}
@@ -188,6 +206,17 @@
     <div class="field full note" id="noteDias" style="display:none;">
       Paralelo por dia, voo da manhã (nascer do sol de cada dia) · Consenso de 3 modelos · até o teto.
     </div>
+    <div class="field" id="subidaField" style="display:none;"><label>Razão de subida</label>
+      <select id="subida">
+        <option value="2">2 m/s</option>
+        <option value="4" selected>4 m/s</option>
+        <option value="6">6 m/s</option>
+        <option value="8">8 m/s</option>
+      </select>
+    </div>
+    <div class="field full note" id="noteMapa" style="display:none;">
+      Windpath: deriva projetada na subida contínua do solo ao teto (aba 1 = consenso dos 3 modelos; aba 3 = modelo escolhido). Cor por altura: verde = baixo, vermelho = teto. Linhas de decolagem = eixo do vento das 3 primeiras camadas, 4 km para cada lado.
+    </div>
   </div>
   <button id="go" onclick="rodar()">⟳ Gerar</button>
 
@@ -208,7 +237,7 @@ const BLEND=["icon_seamless","gfs_seamless","ecmwf_ifs025"];
 const BLEND_NAMES=["ICON","GFS","ECMWF"];
 const R=Math.PI/180;
 const toDir=d=>(d+180)%360;          // pra onde VAI
-let TAB=0, STATE=null;
+let TAB=0, STATE=null, WPMAP=null;
 
 (function init(){
   const now=new Date();
@@ -221,6 +250,7 @@ let TAB=0, STATE=null;
   const yr=local.slice(0,4);
   document.getElementById('de').value=`${yr}-07-31`;
   document.getElementById('ate').value=`${yr}-08-08`;
+  setTab(0); // aplica a visibilidade dos campos da aba inicial (inclui razão de subida)
 })();
 
 function setTab(t){
@@ -233,7 +263,10 @@ function setTab(t){
   document.getElementById('noteEvo').style.display     = (t===1)?'block':'none';
   document.getElementById('notePrev').style.display    = (t===0)?'block':'none';
   document.getElementById('noteDias').style.display    = (t===3)?'block':'none';
+  document.getElementById('subidaField').style.display = (t===0||t===2)?'flex':'none';
+  document.getElementById('noteMapa').style.display    = (t===0||t===2)?'block':'none';
   document.getElementById('saida').innerHTML='';
+  if(WPMAP){WPMAP.remove();WPMAP=null;}
   STATE=null;
 }
 
@@ -297,7 +330,7 @@ async function fetchModel(lat,lon,dia,model){
   HEIGHTS.forEach(h=>hVars.push(`wind_speed_${h}m`,`wind_direction_${h}m`));
   HPA.forEach(p=>hVars.push(`wind_speed_${p}hPa`,`wind_direction_${p}hPa`,`geopotential_height_${p}hPa`));
   let url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-    +`&hourly=${hVars.join(',')}&daily=sunrise&wind_speed_unit=kmh&timezone=auto`
+    +`&hourly=${hVars.join(',')}&daily=sunrise,sunset&wind_speed_unit=kmh&timezone=auto`
     +`&start_date=${dia}&end_date=${dia}`;
   if(model&&model!=='best_match')url+=`&models=${model}`;
   const r=await fetch(url);
@@ -312,7 +345,7 @@ async function fetchModelRange(lat,lon,start,end,model){
   HEIGHTS.forEach(h=>hVars.push(`wind_speed_${h}m`,`wind_direction_${h}m`));
   HPA.forEach(p=>hVars.push(`wind_speed_${p}hPa`,`wind_direction_${p}hPa`,`geopotential_height_${p}hPa`));
   let url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-    +`&hourly=${hVars.join(',')}&daily=sunrise&wind_speed_unit=kmh&timezone=auto`
+    +`&hourly=${hVars.join(',')}&daily=sunrise,sunset&wind_speed_unit=kmh&timezone=auto`
     +`&start_date=${start}&end_date=${end}`;
   if(model&&model!=='best_match')url+=`&models=${model}`;
   const r=await fetch(url);
@@ -323,6 +356,140 @@ async function fetchModelRange(lat,lon,start,end,model){
 }
 
 let TZLABEL='';
+let WXLINE='';
+
+function desenharWindpath(inicio,segs,marcas,linhas){
+  if(typeof L==='undefined'){
+    const d=document.getElementById('mapaWp');
+    if(d)d.outerHTML='<div class="err">Mapa indisponível (sem acesso à biblioteca Leaflet).</div>';
+    return;
+  }
+  if(WPMAP){WPMAP.remove();WPMAP=null;}
+  WPMAP=L.map('mapaWp',{scrollWheelZoom:false});
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+    maxZoom:19,attribution:'Imagens © Esri'
+  }).addTo(WPMAP);
+  // linhas de decolagem (eixo do vento das camadas baixas) — desenhadas antes, a trajetória fica por cima
+  const ponto=(base,brg,km)=>{
+    const dLat=km*Math.cos(brg*R)/111.32;
+    const dLon=km*Math.sin(brg*R)/(111.32*Math.cos(base[0]*R));
+    return [base[0]+dLat,base[1]+dLon];
+  };
+  (linhas||[]).forEach(ln=>{
+    const a=ponto(inicio,ln.brg,-4), b=ponto(inicio,ln.brg,4);
+    const tip=`${ln.ft} ft · vai p/ ${Math.round(ln.brg)}° · ${ln.s.toFixed(1)} km/h`;
+    L.polyline([a,b],{color:ln.cor,weight:1.6,opacity:.95}).addTo(WPMAP).bindTooltip(tip,{sticky:true});
+    // seta na ponta a favor do vento
+    const seta=`<svg width="18" height="18" viewBox="-9 -9 18 18" style="transform:rotate(${ln.brg}deg)">
+      <polygon points="0,-8 5,4 0,1 -5,4" fill="${ln.cor}" stroke="#fff" stroke-width="0.8"/></svg>`;
+    L.marker(b,{icon:L.divIcon({html:seta,className:'',iconSize:[18,18],iconAnchor:[9,9]}),interactive:false}).addTo(WPMAP);
+  });
+  // trajetória: um segmento fino por camada de 250 ft, degradê verde→vermelho
+  segs.forEach(sg=>L.polyline([sg.p0,sg.p1],{color:'#fff',weight:4.5,opacity:.85}).addTo(WPMAP));
+  segs.forEach(sg=>L.polyline([sg.p0,sg.p1],{color:sg.cor,weight:2.2,opacity:1}).addTo(WPMAP));
+  // ponto de lançamento
+  L.circleMarker(inicio,{radius:5,color:'#17233a',weight:2,fillColor:'#fff',fillOpacity:1}).addTo(WPMAP)
+    .bindTooltip('Lançamento',{direction:'top'});
+  // marcas a cada 1000 ft, com direção e velocidade do vento na altura
+  marcas.forEach(m=>{
+    const tip=`${m.ft} ft`+(m.d!=null?` · vai p/ ${Math.round(m.d)}° · ${m.s.toFixed(1)} km/h`:'');
+    L.circleMarker(m.p,{radius:3,color:'#fff',weight:1.5,fillColor:'#17233a',fillOpacity:1})
+      .addTo(WPMAP).bindTooltip(tip,{direction:'top'});
+  });
+  // enquadrar a trajetória (as linhas de 4 km ficam acessíveis com um zoom out)
+  const todos=[inicio,...segs.map(s=>s.p1)];
+  WPMAP.fitBounds(L.latLngBounds(todos).pad(0.25));
+  setTimeout(()=>WPMAP.invalidateSize(),60);
+}
+
+// monta a trajetória e as linhas de decolagem a partir de uma função de vento (aglM -> {d,s})
+function montarWindpath(ventoEm,elevFt,lat0,lon0,rateMs){
+  const camadaM=250*M_PER_FT;
+  let la=lat0,lo=lon0;
+  const baseFt=Math.ceil(elevFt/250)*250;
+  const segs=[],marcas=[];let totMin=0,totKm=0;
+  for(let amsl=baseFt;amsl<TETO;amsl+=250){
+    const v=ventoEm(((amsl+125)-elevFt)*M_PER_FT);
+    if(!v)continue;
+    const tH=camadaM/rateMs/3600, brg=toDir(v.d), dist=v.s*tH;
+    const dLat=dist*Math.cos(brg*R)/111.32;
+    const dLon=dist*Math.sin(brg*R)/(111.32*Math.cos(la*R));
+    const p0=[la,lo]; la+=dLat; lo+=dLon;
+    segs.push({p0,p1:[la,lo],cor:corAltura(amsl,baseFt,TETO)});
+    totMin+=tH*60; totKm+=dist;
+    if((amsl+250)%1000===0){
+      const vm=ventoEm(((amsl+250)-elevFt)*M_PER_FT);
+      marcas.push({p:[la,lo],ft:amsl+250,d:vm?toDir(vm.d):null,s:vm?vm.s:null});
+    }
+  }
+  const CORES_LINHA=['#3ddc55','#ffa500','#ff3b30'];
+  const linhas=[];
+  [0,250,500].forEach((off,i)=>{
+    const amsl=baseFt+off;
+    const v=ventoEm((amsl-elevFt)*M_PER_FT);
+    if(!v)return;
+    linhas.push({brg:toDir(v.d),s:v.s,cor:CORES_LINHA[i],ft:amsl});
+  });
+  return {segs,marcas,linhas,totMin,totKm};
+}
+
+// anexa mapa + legenda das linhas + resumo ao final da saída e desenha
+function anexarWindpath(out,wp,lat0,lon0,rateMs,fonte){
+  if(!wp.segs.length)return;
+  const leg=wp.linhas.map(ln=>
+    `<span class="wp-lg"><i style="background:${ln.cor}"></i>${ln.ft} ft · vai p/ ${Math.round(ln.brg)}° · ${ln.s.toFixed(1)} km/h</span>`
+  ).join('');
+  out.insertAdjacentHTML('beforeend',
+    `<div id="mapaWp"></div>`
+    +(leg?`<div class="wp-legenda"><span class="wp-lg-t">Linhas de decolagem:</span>${leg}</div>`:'')
+    +`<div class="wp-info">`
+    +`<span>🧭 <b>${fonte}</b></span>`
+    +`<span>⬆️ <b>${rateMs} m/s</b></span>`
+    +`<span>⏱️ solo→teto: <b>${Math.round(wp.totMin)} min</b></span>`
+    +`<span>📏 deriva total: <b>${wp.totKm.toFixed(1)} km</b></span>`
+    +`<span>⛔ teto: <b>${TETO} ft</b></span>`
+    +`</div>`);
+  desenharWindpath([lat0,lon0],wp.segs,wp.marcas,wp.linhas);
+}
+
+async function fetchTempo(lat,lon,dia){
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    +`&hourly=weather_code,temperature_2m,dew_point_2m,pressure_msl,wind_gusts_10m,precipitation_probability`
+    +`&wind_speed_unit=kmh&timezone=auto&start_date=${dia}&end_date=${dia}`;
+  const r=await fetch(url);
+  if(!r.ok)return null;
+  return r.json();
+}
+
+function tempoWMO(c){
+  if(c===0)return['☀️','Céu limpo'];
+  if(c===1)return['🌤️','Quase limpo'];
+  if(c===2)return['⛅','Parc. nublado'];
+  if(c===3)return['☁️','Nublado'];
+  if(c===45||c===48)return['🌫️','Neblina'];
+  if(c>=51&&c<=57)return['🌦️','Garoa'];
+  if(c>=61&&c<=67)return['🌧️','Chuva'];
+  if(c>=71&&c<=77)return['🌨️','Neve'];
+  if(c>=80&&c<=82)return['🌧️','Pancadas'];
+  if(c>=95)return['⛈️','Tempestade'];
+  return['🌡️','—'];
+}
+
+function montarWxLine(wx,hora){
+  const h=wx?.hourly;
+  if(!h||!h.time||h.time.length<=hora)return'';
+  const [emo,txt]=tempoWMO(h.weather_code?.[hora]);
+  const t=h.temperature_2m?.[hora], td=h.dew_point_2m?.[hora];
+  const qnh=h.pressure_msl?.[hora], raj=h.wind_gusts_2m?.[hora]??h.wind_gusts_10m?.[hora];
+  const pp=h.precipitation_probability?.[hora];
+  let s=`${emo} <b>${txt}</b>`;
+  if(qnh!=null)s+=` · QNH <b>${Math.round(qnh)}</b> hPa`;
+  if(t!=null)s+=` · 🌡️ <b>${Math.round(t)}°C</b>${td!=null?` <span class="wx-dim">/ orvalho ${Math.round(td)}°C</span>`:''}`;
+  if(raj!=null)s+=` · 💨 rajada <b>${Math.round(raj)}</b> km/h`;
+  if(pp!=null)s+=` · 💧 <b>${pp}%</b>`;
+  if(t!=null&&td!=null&&(t-td)<=2.5)s+=` · <span class="wx-alerta">⚠️ risco de neblina</span>`;
+  return `<div class="wxline">${s}</div>`;
+}
 
 
 async function rodar(){
@@ -332,11 +499,15 @@ async function rodar(){
   const modelo=document.getElementById('modelo').value;
   btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> buscando…';out.innerHTML='';
   try{
+    WXLINE='';
+    if(TAB!==3){
+      try{const wx=await fetchTempo(lat,lon,dia);WXLINE=montarWxLine(wx,hora);}catch(e){}
+    }
     if(TAB===0){
       const datas=await Promise.all(BLEND.map(m=>fetchModel(lat,lon,dia,m).catch(()=>null)));
       const ok=datas.map((d,idx)=>({d,name:BLEND_NAMES[idx]})).filter(x=>x.d);
       if(!ok.length)throw new Error('Nenhum modelo respondeu.');
-      const elev=ok[0].d.elevation,elevFt=elev/M_PER_FT,sunrise=ok[0].d.daily?.sunrise?.[0];
+      const elev=ok[0].d.elevation,elevFt=elev/M_PER_FT,sunrise=ok[0].d.daily?.sunrise?.[0],sunset=ok[0].d.daily?.sunset?.[0];
       const niveis=[];const baseFt=Math.ceil(elevFt/250)*250;
       for(let amsl=baseFt;amsl<=TOPO;amsl+=250)niveis.push(amsl);
       const cols=ok.map(o=>{
@@ -346,13 +517,21 @@ async function rodar(){
       });
       const soloCells=ok.map(o=>interpPerfil(perfilDeHourly(o.d.hourly,o.d.elevation,hora),0));
       const t=ok[0].d.hourly.time[hora]?ok[0].d.hourly.time[hora].replace('T',' '):`${dia} ${String(hora).padStart(2,'0')}:00`;
-      STATE={kind:0,niveis,cols,soloCells,elev,elevFt,sunrise,tLabel:t,lat,lon};
+      STATE={kind:0,niveis,cols,soloCells,elev,elevFt,sunrise,sunset,tLabel:t,lat,lon};
       renderPrevisao(out);
+      // Windpath do consenso (média vetorial dos modelos disponíveis)
+      const rateMs=parseFloat(document.getElementById('subida').value)||4;
+      const la0=parseFloat(lat),lo0=parseFloat(lon);
+      if(!isNaN(la0)&&!isNaN(lo0)){
+        const perfis=cols.map(c=>c.perfil);
+        const wp=montarWindpath(m=>blendAt(perfis,m),elevFt,la0,lo0,rateMs);
+        anexarWindpath(out,wp,la0,lo0,rateMs,`consenso de ${cols.length} modelos`);
+      }
     }else if(TAB===1){
       const datas=await Promise.all(BLEND.map(m=>fetchModel(lat,lon,dia,m).catch(()=>null)));
       const ok=datas.filter(Boolean);
       if(!ok.length)throw new Error('Nenhum modelo respondeu.');
-      const elev=ok[0].elevation,elevFt=elev/M_PER_FT,sunrise=ok[0].daily?.sunrise?.[0];
+      const elev=ok[0].elevation,elevFt=elev/M_PER_FT,sunrise=ok[0].daily?.sunrise?.[0],sunset=ok[0].daily?.sunset?.[0];
       let h0=new Date().getHours();
       if(sunrise){const mt=sunrise.match(/T(\d{2}):(\d{2})/);if(mt)h0=Math.round(+mt[1]+(+mt[2])/60);}
       const horas=[h0,h0+1,h0+2,h0+3].filter(x=>x>=0&&x<=23);
@@ -365,13 +544,13 @@ async function rodar(){
         return{label,cells};
       });
       const soloBlend=blendAt(ok.map(d=>perfilDeHourly(d.hourly,d.elevation,horas[0])),0);
-      STATE={kind:1,niveis,cols,soloBlend,elev,elevFt,sunrise,nModelos:ok.length,lat,lon,tLabel:`${dia} (nascer→+3h)`};
+      STATE={kind:1,niveis,cols,soloBlend,elev,elevFt,sunrise,sunset,nModelos:ok.length,lat,lon,tLabel:`${dia} (nascer→+3h)`};
       renderEvo(out);
     }else if(TAB===2){
       const data=await fetchModel(lat,lon,dia,modelo);
       const elev=data.elevation,elevFt=elev/M_PER_FT;
       const perfil=perfilDeHourly(data.hourly,elev,hora);
-      const sunrise=data.daily?.sunrise?.[0];
+      const sunrise=data.daily?.sunrise?.[0],sunset=data.daily?.sunset?.[0];
       const grade=[];const baseFt=Math.ceil(elevFt/250)*250;
       for(let amsl=baseFt;amsl<=TOPO;amsl+=250){
         const v=interpPerfil(perfil,(amsl-elevFt)*M_PER_FT);
@@ -379,8 +558,15 @@ async function rodar(){
       }
       let solo=null;const vs=interpPerfil(perfil,0);if(vs)solo={d:vs.d,s:vs.s};
       const t=data.hourly.time[hora]?data.hourly.time[hora].replace('T',' '):`${dia} ${String(hora).padStart(2,'0')}:00`;
-      STATE={kind:2,grade,solo,elev,elevFt,tLabel:t,sunrise,model:data.model_used||modelo,perfil,lat,lon};
+      STATE={kind:2,grade,solo,elev,elevFt,tLabel:t,sunrise,sunset,model:data.model_used||modelo,perfil,lat,lon};
       renderPlot(out);
+      // Windpath abaixo da plotagem — mesma hora, mesmo modelo
+      const rateMs=parseFloat(document.getElementById('subida').value)||4;
+      const la0=parseFloat(lat),lo0=parseFloat(lon);
+      if(!isNaN(la0)&&!isNaN(lo0)){
+        const wp=montarWindpath(m=>interpPerfil(perfil,m),elevFt,la0,lo0,rateMs);
+        anexarWindpath(out,wp,la0,lo0,rateMs,STATE.model||'modelo');
+      }
     }else{
       // Aba 4 — Dias: paralelo por dia, voo da manhã (nascer do sol), consenso 3 modelos
       let de=document.getElementById('de').value, ate=document.getElementById('ate').value;
@@ -404,6 +590,7 @@ async function rodar(){
       const elev=ok[0].elevation,elevFt=elev/M_PER_FT;
       const dias=ok[0].daily?.time||[];
       const sunrises=ok[0].daily?.sunrise||[];
+      const sunsets=ok[0].daily?.sunset||[];
       const niveis=[];const baseFt=Math.ceil(elevFt/500)*500;
       for(let amsl=baseFt;amsl<=TOPO;amsl+=500)niveis.push(amsl);
       const cols=dias.map((diaStr,di)=>{
@@ -416,7 +603,7 @@ async function rodar(){
         const perfis=ok.map(d=>perfilDeHourly(d.hourly,d.elevation,i));
         const cells=niveis.map(amsl=>blendAt(perfis,(amsl-elevFt)*M_PER_FT));
         const dd=diaStr.slice(8,10),mm=diaStr.slice(5,7);
-        return{label:`${dd}/${mm}`,sr:sr.slice(11,16),cells};
+        return{label:`${dd}/${mm}`,sr:sr.slice(11,16),ss:(sunsets[di]||'').slice(11,16),cells};
       });
       STATE={kind:3,niveis,cols,elev,elevFt,nModelos:ok.length,lat,lon,tLabel:`${dias[0]||de} → ${dias[dias.length-1]||ate}`,aviso};
       renderDias(out);
@@ -429,8 +616,10 @@ async function rodar(){
 }
 
 function meta(s){
-  let m=`<div class="meta"><span>⛰️ Solo: <b>${Math.round(s.elevFt)} ft</b> (${Math.round(s.elev)} m)</span>`;
+  let m=WXLINE;
+  m+=`<div class="meta"><span>⛰️ Solo: <b>${Math.round(s.elevFt)} ft</b> (${Math.round(s.elev)} m)</span>`;
   if(s.sunrise)m+=`<span>🌅 Nascer: <b>${s.sunrise.slice(11,16)}</b></span>`;
+  if(s.sunset)m+=`<span>🌇 Pôr: <b>${s.sunset.slice(11,16)}</b></span>`;
   if(s.tLabel)m+=`<span>🕐 <b>${s.tLabel}</b>${TZLABEL?` <span style="color:var(--dim)">(${TZLABEL})</span>`:''}</span>`;
   if(s.model)m+=`<span>🛰️ <b>${s.model}</b></span>`;
   if(s.nModelos)m+=`<span>🛰️ <b>${s.nModelos} modelos</b></span>`;
@@ -469,6 +658,7 @@ function printHead(s){
     <div class="ph-t">RVB Team 🎈 · Indianola IA · Perfil de Vento — ${TABNOME[s.kind]}</div>
     <div class="ph-s">📍 ${(+s.lat).toFixed(4)}, ${(+s.lon).toFixed(4)} · Solo ${Math.round(s.elevFt)} ft`
     + (s.sunrise?` · Nascer ${s.sunrise.slice(11,16)}`:``)
+    + (s.sunset?` · Pôr ${s.sunset.slice(11,16)}`:``)
     + (s.tLabel?` · ${s.tLabel}`:``)
     + (s.model?` · ${s.model}`:``)
     + (s.nModelos?` · ${s.nModelos} modelos`:``)
@@ -565,7 +755,7 @@ function renderEvo(out){
 function renderDias(out){
   const s=STATE;
   let head=`<th>AMSL</th>`;
-  s.cols.forEach(c=>head+=`<th>${c.label}${c.sr?`<br><span style="color:var(--dim);font-weight:400">☀${c.sr}</span>`:''}</th>`);
+  s.cols.forEach(c=>head+=`<th>${c.label}${c.sr?`<br><span style="color:var(--dim);font-weight:400">☀${c.sr}</span>`:``}${c.ss?`<br><span style="color:var(--dim);font-weight:400">🌇${c.ss}</span>`:``}</th>`);
   let rows='';
   const minA=s.niveis[0], maxA=s.niveis[s.niveis.length-1];
   const idx=s.niveis.map((_,i)=>i).reverse();
