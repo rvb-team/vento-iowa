@@ -40,8 +40,13 @@
   .row5{grid-column:1 / -1;display:grid;grid-template-columns:.7fr 1.1fr 1.1fr .8fr .8fr;gap:12px;}
   #ctrlMapa{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
   #ctrlMapa .row5{grid-column:1 / -1;}
+  #slideField{grid-column:1 / -1;}
+  #horaSlide{width:100%;accent-color:var(--accent);height:28px;cursor:pointer;}
+  #wptField{grid-column:1 / -1;}
+  .wpt-rotulo{background:rgba(10,14,20,.82);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:4px;
+    padding:1px 5px;font-family:var(--mono);font-size:10px;font-weight:700;white-space:nowrap;line-height:1.4;}
   #saida #ctrlMapa{margin-top:16px;padding:12px;background:var(--panel2);border:1px solid var(--line);
-    border-radius:8px 8px 0 0;border-bottom:none;}
+    border-radius:8px 8px 0 0;border-bottom:none;box-sizing:border-box;}
   #saida #ctrlMapa + #mapaWp{margin-top:0;border-radius:0 0 8px 8px;}
   .utm-curto{font-size:19px !important;font-weight:800;color:var(--accent) !important;
     letter-spacing:2px;text-align:center;}
@@ -64,6 +69,7 @@
     cursor:pointer;width:100%;transition:.1s;text-transform:uppercase;}
   button:hover{filter:brightness(1.08);}button:active{transform:translateY(1px);}
   button:disabled{filter:grayscale(.6) brightness(.7);cursor:wait;}
+  #go,#go2{background:linear-gradient(180deg,#1fc06c,#18a05a);color:#fff;}
   .btn-dat{background:linear-gradient(180deg,#5bd0ff,var(--accent2));color:#04141f;margin-top:14px;}
   .btn-gps{background:var(--panel2);color:var(--ink);border:1px solid var(--line);text-transform:none;
     font-weight:700;padding:11px 12px;}
@@ -79,7 +85,8 @@
   .wxline .wx-dim{color:var(--dim);}
   .wxline .wx-alerta{color:#ffd23f;font-weight:700;}
   .wxline + .meta{margin-top:8px;}
-  #mapaWp{height:420px;border-radius:8px;margin-top:12px;border:1px solid var(--line);background:#0d1320;}
+  #mapaWp{width:100%;aspect-ratio:1/1;margin:12px auto 0;border-radius:8px;border:1px solid var(--line);background:#0d1320;box-sizing:border-box;}
+  @media(max-width:640px){#mapaWp{width:100%;aspect-ratio:4/5;min-height:280px}}
   .wp-info{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--dim);
     margin-top:8px;padding:10px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;}
   .wp-info b{color:var(--ink);}
@@ -88,7 +95,11 @@
   .wp-lg-t{font-weight:700;color:var(--ink);}
   .wp-lg{display:inline-flex;align-items:center;gap:6px;color:var(--ink);font-weight:600;}
   .wp-lg i{display:inline-block;width:18px;height:3px;border-radius:2px;}
-  @media(max-width:640px){#mapaWp{height:300px}}
+  .conf{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.03em;}
+  .conf.alta{background:#123524;color:#3ddc55;border:1px solid #1e5c38;}
+  .conf.media{background:#3a2e10;color:#ffd23f;border:1px solid #6b551d;}
+  .conf.baixa{background:#3a1512;color:#ff6b5e;border:1px solid #6b2a24;}
+  
   .gridwrap{overflow-x:auto;margin-top:12px;}
   table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);
     border-radius:10px;overflow:hidden;font-size:13px;}
@@ -110,7 +121,6 @@
   .mk{margin-left:5px;font-weight:800;}
   .mkmax{color:var(--bad);}
   .mkmin{opacity:.9;}
-  .mkmid{color:var(--accent);}
   .vem{color:var(--dim);}
   tr:last-child td{border-bottom:none;}
   tr.solo td{font-weight:700;background:rgba(138,152,172,.08);}
@@ -133,7 +143,7 @@
   @media print{
     @page{margin:12mm;}
     body{background:#fff !important;color:#000 !important;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    #lock,.tabs,.controls,#go,.footer,.btn-dat,.btn-pdf,.modrow{display:none !important;}
+    #lock,.tabs,.controls,#go,#ctrlMapa,.footer,.btn-dat,.btn-pdf,.modrow{display:none !important;}
     #app{display:block !important;}
     .kicker,h1{display:none;}
     .printhead{display:block !important;margin-bottom:10px;}
@@ -155,7 +165,6 @@
     .arw{display:none !important;}
     .arwp{display:inline-block !important;margin-right:5px;font-weight:700;}
     .mkmax{color:#d22 !important;}
-    .mkmid{color:#b8860b !important;}
   }
   .err{background:rgba(255,84,104,.1);border:1px solid rgba(255,84,104,.4);color:#ffb3bd;
     padding:14px 16px;border-radius:8px;font-size:13px;margin-top:16px;}
@@ -232,11 +241,28 @@
     </div>
     <div class="field" id="subidaField" style="display:none;"><label>Razão de subida</label>
       <select id="subida">
-        <option value="2">2 m/s</option>
-        <option value="4" selected>4 m/s</option>
+        <option value="2" selected>2 m/s</option>
+        <option value="4">4 m/s</option>
         <option value="6">6 m/s</option>
         <option value="8">8 m/s</option>
       </select>
+    </div>
+    <div class="field" id="go2Field" style="display:none;"><label>&nbsp;</label>
+      <button id="go2" onclick="rodar()">⟳ Gerar</button>
+    </div>
+    <div class="field" id="wptField" style="display:none;"><label>Alvos da tarefa <span style="color:var(--dim);font-weight:400;text-transform:none;">(.wpt ou .otwp)</span></label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="file" id="wptFile" accept=".wpt,.otwp,.txt" onchange="carregarWpt(this)" style="display:none;">
+        <button type="button" id="wptBtn" onclick="document.getElementById('wptFile').click()" style="width:auto;padding:10px 16px;">📤 Enviar alvos</button>
+        <span id="wptStatus" style="color:var(--dim);font-size:12px;">nenhum arquivo selecionado</span>
+        <button type="button" id="wptLimpar" onclick="limparWpt()" style="width:auto;padding:8px 12px;font-size:12px;display:none;">✕</button>
+      </div>
+    </div>
+    <div class="field" id="slideField" style="display:none;">
+      <label>Hora no mapa: <span id="horaSlideLbl" style="color:var(--accent);font-weight:800;">--:--</span>
+        <span style="color:var(--dim);font-weight:400">(arraste — só o mapa muda, sem nova busca)</span></label>
+      <input type="range" id="horaSlide" min="0" max="23" step="1" value="7"
+        oninput="document.getElementById('horaSlideLbl').textContent=String(this.value).padStart(2,'0')+':00';document.getElementById('hora').value=this.value;redesenharMapa(+this.value);">
     </div>
   </div></div>
   <div id="saida" style="margin-top:4px;"></div>
@@ -256,7 +282,118 @@ const BLEND=["icon_seamless","gfs_seamless","ecmwf_ifs025"];
 const BLEND_NAMES=["ICON","GFS","ECMWF"];
 const R=Math.PI/180;
 const toDir=d=>(d+180)%360;          // pra onde VAI
-let TAB=0, STATE=null, WPMAP=null;
+let TAB=0, STATE=null, WPMAP=null, MAPCTX=null, WXJSON=null, WPTS=[];
+
+// ---------- alvos .wpt (OziExplorer) ----------
+function bgrParaCss(v){ // OziExplorer guarda decimal BGR: R=v&255, G=(v>>8)&255, B=(v>>16)&255
+  v=parseInt(v,10); if(isNaN(v)||v<0)return '#ffffff';
+  return `rgb(${v&255},${(v>>8)&255},${(v>>16)&255})`;
+}
+function corOtwp(s){ // .otwp: nome CSS ("Yellow") ou hex ARGB ("#FF00A5FF")
+  s=(s||'').trim();
+  if(!s)return '#ffffff';
+  if(s[0]==='#')return s.length===9?('#'+s.slice(3)):s;
+  return s; // nomes de cor .NET coincidem com CSS (Yellow, Black, Magenta…)
+}
+function parseWaypoints(texto){
+  const linhas=texto.split(/\r?\n/);
+  const pts=[];
+  if(/^OTWP/i.test(linhas[0]||'')){ // oziTarget .otwp: linha Columns define os campos
+    const iCols=linhas.findIndex(l=>/^Columns,/i.test(l));
+    if(iCols<0)return pts;
+    const cols=linhas[iCols].split(',').slice(1).map(s=>s.trim());
+    const iNome=cols.indexOf('name'), iLat=cols.indexOf('latitude'), iLon=cols.indexOf('longitude'), iCor=cols.indexOf('backColor');
+    for(const ln of linhas.slice(iCols+1)){
+      const c=ln.split(','); // c[0]=index alinha com cols[0]='index'
+      if(c.length<4)continue;
+      const la=parseFloat(c[iLat]), lo=parseFloat(c[iLon]);
+      if(isNaN(la)||isNaN(lo))continue;
+      pts.push({nome:(c[iNome]||'').trim(),lat:la,lon:lo,cor:corOtwp(c[iCor])});
+    }
+  }else{ // OziExplorer .wpt clássico: 4 linhas de cabeçalho, cor BGR decimal no campo 10
+    for(const ln of linhas.slice(4)){
+      const c=ln.split(',');
+      if(c.length<4)continue;
+      const la=parseFloat(c[2]), lo=parseFloat(c[3]);
+      if(isNaN(la)||isNaN(lo))continue;
+      pts.push({nome:(c[1]||'').trim().replace(/\u00D1/g,','),lat:la,lon:lo,cor:bgrParaCss(c[9])});
+    }
+  }
+  return pts;
+}
+function carregarWpt(inp){
+  const f=inp.files&&inp.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    WPTS=parseWaypoints(String(r.result));
+    WPTWX=null;WPTWX_DIA='';
+    const diaSel=document.getElementById('dia').value;
+    if(diaSel)buscarVentoAlvos(diaSel);
+    const pts=WPTS;
+    const st=document.getElementById('wptStatus');
+    st.textContent=pts.length?`${f.name} · ${pts.length} alvos`:`${f.name} · nenhum alvo reconhecido`;
+    st.style.color=pts.length?'var(--accent)':'var(--dim)';
+    st.style.fontWeight=pts.length?'800':'400';
+    document.getElementById('wptLimpar').style.display=pts.length?'block':'none';
+    const h=parseInt(document.getElementById('horaSlide').value,10);
+    if(MAPCTX&&!isNaN(h))redesenharMapa(h);
+  };
+  r.readAsText(f,'latin1'); // .wpt do Ozi costuma vir em ANSI
+}
+let WPTWX=null, WPTWX_DIA='';
+async function buscarVentoAlvos(dia){
+  if(!WPTS.length)return;
+  try{
+    const las=WPTS.map(p=>p.lat.toFixed(5)).join(','), los=WPTS.map(p=>p.lon.toFixed(5)).join(',');
+    const base=`https://api.open-meteo.com/v1/forecast?latitude=${las}&longitude=${los}`
+      +`&hourly=wind_direction_10m,wind_speed_10m&wind_speed_unit=kmh&timezone=auto`
+      +`&start_date=${dia}&end_date=${dia}`;
+    // mesmos modelos das abas: uma chamada multi-ponto por modelo, em paralelo
+    const resps=await Promise.all(BLEND.map(m=>
+      fetch(base+`&models=${m}`).then(r=>r.ok?r.json():null).catch(()=>null)));
+    const porModelo={};
+    BLEND.forEach((m,mi)=>{
+      let j=resps[mi]; if(!j)return;
+      if(!Array.isArray(j))j=[j];
+      porModelo[m]=j.map(o=>({d:o.hourly?.wind_direction_10m||[],s:o.hourly?.wind_speed_10m||[]}));
+    });
+    if(!Object.keys(porModelo).length)throw 0;
+    WPTWX={porModelo,n:WPTS.length};
+    WPTWX_DIA=dia;
+    const h=parseInt(document.getElementById('horaSlide').value,10);
+    if(MAPCTX&&!isNaN(h))redesenharMapa(h);
+  }catch(e){WPTWX=null;}
+}
+function ventoAlvoEm(i,h){ // regra da aba: consenso (média vetorial) ou modelo escolhido
+  if(!WPTWX)return null;
+  const c=MAPCTX, pm=WPTWX.porModelo;
+  const pega=m=>{const p=pm[m]&&pm[m][i]; const d=p?.d?.[h], s=p?.s?.[h]; return (d!=null&&s!=null)?{d,s}:null;};
+  if(c&&c.tipo==='modelo'){
+    const alvoM=(c.nomes&&c.nomes[0])||'';
+    const v=pega(alvoM);
+    if(v)return {brg:toDir(v.d),s:v.s};
+  }
+  // consenso: média vetorial dos modelos disponíveis
+  let su=0,sv=0,n=0;
+  for(const m of Object.keys(pm)){
+    const v=pega(m); if(!v)continue;
+    const a=v.d*R; su+=-v.s*Math.sin(a); sv+=-v.s*Math.cos(a); n++;
+  }
+  if(!n)return null;
+  const s=Math.hypot(su/n,sv/n);
+  const dFrom=(Math.atan2(-(su/n),-(sv/n))/R+360)%360;
+  return {brg:toDir(dFrom),s};
+}
+function limparWpt(){
+  WPTWX=null;WPTWX_DIA='';
+  WPTS=[];document.getElementById('wptFile').value='';
+  const st=document.getElementById('wptStatus');
+  st.textContent='nenhum arquivo selecionado';st.style.color='var(--dim)';st.style.fontWeight='400';
+  document.getElementById('wptLimpar').style.display='none';
+  const h=parseInt(document.getElementById('horaSlide').value,10);
+  if(MAPCTX&&!isNaN(h))redesenharMapa(h);
+}
+
 
 // ---------- UTM (WGS84) ----------
 function utmBand(lat){const b='CDEFGHJKLMNPQRSTUVWX';return b[Math.max(0,Math.min(19,Math.floor((lat+80)/8)))];}
@@ -354,6 +491,10 @@ function setTab(t){
   document.getElementById('notePrev').style.display    = (t===0)?'block':'none';
   document.getElementById('noteDias').style.display    = (t===3)?'block':'none';
   document.getElementById('subidaField').style.display = (t===0||t===2)?'flex':'none';
+  document.getElementById('go2Field').style.display    = (t===0||t===2)?'flex':'none';
+  document.getElementById('slideField').style.display  = (t===0||t===2)?'flex':'none';
+  document.getElementById('wptField').style.display    = (t===0||t===2)?'flex':'none';
+  MAPCTX=null;
   document.getElementById('noteMapa').style.display    = (t===0||t===2)?'block':'none';
   document.getElementById('saida').innerHTML='';
   if(WPMAP){WPMAP.remove();WPMAP=null;}
@@ -437,7 +578,7 @@ async function fetchModelRange(lat,lon,start,end,model){
   HEIGHTS.forEach(h=>hVars.push(`wind_speed_${h}m`,`wind_direction_${h}m`));
   HPA.forEach(p=>hVars.push(`wind_speed_${p}hPa`,`wind_direction_${p}hPa`,`geopotential_height_${p}hPa`));
   let url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-    +`&hourly=${hVars.join(',')}&daily=sunrise,sunset&wind_speed_unit=kmh&timezone=auto`
+    +`&hourly=${hVars.join(',')}&daily=sunrise,sunset,weather_code,precipitation_sum,precipitation_probability_max&wind_speed_unit=kmh&timezone=auto`
     +`&start_date=${start}&end_date=${end}`;
   if(model&&model!=='best_match')url+=`&models=${model}`;
   const r=await fetch(url);
@@ -450,7 +591,7 @@ async function fetchModelRange(lat,lon,start,end,model){
 let TZLABEL='';
 let WXLINE='';
 
-function desenharWindpath(inicio,segs,marcas,linhas){
+function desenharWindpath(inicio,segs,marcas,linhas,ventosAlvos){
   if(typeof L==='undefined'){
     const d=document.getElementById('mapaWp');
     if(d)d.outerHTML='<div class="err">Mapa indisponível (sem acesso à biblioteca Leaflet).</div>';
@@ -484,8 +625,9 @@ function desenharWindpath(inicio,segs,marcas,linhas){
     const seta=`<svg width="18" height="18" viewBox="-9 -9 18 18" style="transform:rotate(${ln.brg}deg)">
       <polygon points="0,-8 5,4 0,1 -5,4" fill="${ln.cor}" stroke="#fff" stroke-width="0.8"/></svg>`;
     L.marker(b,{icon:L.divIcon({html:seta,className:'',iconSize:[18,18],iconAnchor:[9,9]}),interactive:false}).addTo(WPMAP);
+    L.marker(b,{icon:L.divIcon({html:`<span class="wpt-rotulo" style="color:${ln.cor};border-color:${ln.cor}">${ln.ft}ft →${Math.round(ln.brg)}° ${ln.s.toFixed(0)}km/h</span>`,className:'',iconSize:null,iconAnchor:[-12,9]}),interactive:false}).addTo(WPMAP);
   });
-  // trajetória: um segmento fino por camada de 250 ft, degradê verde→vermelho
+  // trajetória principal: um segmento fino por camada de 250 ft, degradê verde→vermelho
   segs.forEach(sg=>L.polyline([sg.p0,sg.p1],{color:'#fff',weight:4.5,opacity:.85}).addTo(WPMAP));
   segs.forEach(sg=>L.polyline([sg.p0,sg.p1],{color:sg.cor,weight:2.2,opacity:1}).addTo(WPMAP));
   // ponto de lançamento
@@ -497,10 +639,29 @@ function desenharWindpath(inicio,segs,marcas,linhas){
     L.circleMarker(m.p,{radius:3,color:'#fff',weight:1.5,fillColor:'#17233a',fillOpacity:1})
       .addTo(WPMAP).bindTooltip(tip,{direction:'top'});
   });
-  // enquadrar a trajetória (as linhas de 4 km ficam acessíveis com um zoom out)
-  const todos=[inicio,...segs.map(s=>s.p1)];
+  const soloLn=(linhas&&linhas[0])?linhas[0]:null;
+  WPTS.forEach((a,i)=>{
+    const vl=(ventosAlvos&&ventosAlvos[i])||soloLn; // vento LOCAL do ponto; solo geral como reserva
+    const txt=vl?`→${Math.round(vl.brg)}° · ${vl.s.toFixed(0)} km/h`:'';
+    const local=!!(ventosAlvos&&ventosAlvos[i]);
+    L.circleMarker([a.lat,a.lon],{radius:3,color:'#fff',weight:1.2,fillColor:a.cor,fillOpacity:1}).addTo(WPMAP)
+      .bindTooltip(`${a.nome||'alvo'}${txt?` · solo${local?'':' (geral)'} ${txt}`:''}`,{direction:'top'});
+    if(vl){
+      const sv=`<svg width="52" height="52" viewBox="-26 -26 52 52" style="transform:rotate(${vl.brg}deg)">
+        <line x1="0" y1="19" x2="0" y2="-13" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+        <line x1="0" y1="19" x2="0" y2="-13" stroke="#3ddc55" stroke-width="1.3" stroke-linecap="round"/>
+        <polygon points="0,-23 6,-9 0,-12.6 -6,-9" fill="#3ddc55" stroke="#fff" stroke-width="0.9"/></svg>`;
+      L.marker([a.lat,a.lon],{icon:L.divIcon({html:sv,className:'',iconSize:[52,52],iconAnchor:[26,26]}),interactive:false}).addTo(WPMAP);
+    }
+    if(a.nome){
+      const linha2=txt?`<br><span style="color:#3ddc55">${txt}</span>`:'';
+      L.marker([a.lat,a.lon],{icon:L.divIcon({html:`<span class="wpt-rotulo">${a.nome}${linha2}</span>`,className:'',iconSize:null,iconAnchor:[-10,26]}),interactive:false}).addTo(WPMAP);
+    }
+  });
+  // enquadrar a trajetória + alvos (as linhas de 4 km ficam acessíveis com um zoom out)
+  const todos=[inicio,...segs.map(s=>s.p1),...WPTS.map(a=>[a.lat,a.lon])];
   WPMAP.fitBounds(L.latLngBounds(todos).pad(0.25));
-  setTimeout(()=>WPMAP.invalidateSize(),60);
+  setTimeout(()=>{if(WPMAP)WPMAP.invalidateSize();},60);
 }
 
 // monta a trajetória e as linhas de decolagem a partir de uma função de vento (aglM -> {d,s})
@@ -531,29 +692,69 @@ function montarWindpath(ventoEm,elevFt,lat0,lon0,rateMs){
     if(!v)return;
     linhas.push({brg:toDir(v.d),s:v.s,cor:CORES_LINHA[i],ft:amsl});
   });
-  return {segs,marcas,linhas,totMin,totKm,elevFt};
+  return {segs,marcas,linhas,totMin,totKm,elevFt,inicio:[lat0,lon0]};
 }
 
-// anexa mapa + legenda das linhas + resumo ao final da saída e desenha
-function anexarWindpath(out,wp,lat0,lon0,rateMs,fonte){
+// contexto do mapa em cache (permite redesenhar por hora sem nova busca)
+function ventoDeConsenso(jsons,h){const ps=jsons.map(o=>perfilDeHourly(o.hourly,o.elevation,h));return m=>blendAt(ps,m);}
+function ventoDeModelo(json,h){const p=perfilDeHourly(json.hourly,json.elevation,h);return m=>interpPerfil(p,m);}
+
+function redesenharMapa(h){
+  const c=MAPCTX;
+  if(!c||!document.getElementById('wpInfo'))return;
+  const principal=c.tipo==='consenso'?ventoDeConsenso(c.jsons,h):ventoDeModelo(c.jsons[0],h);
+  const wp=montarWindpath(principal,c.elevFt,c.lat0,c.lon0,c.rateMs);
   if(!wp.segs.length)return;
-  const leg=wp.linhas.map(ln=>
-    `<span class="wp-lg"><i style="background:${ln.cor}"></i>${ln.ft} ft · vai p/ ${Math.round(ln.brg)}° · ${ln.s.toFixed(1)} km/h</span>`
-  ).join('');
-  out.insertAdjacentHTML('beforeend',
-    `<div id="mapaWp"></div>`
-    +(leg?`<div class="wp-legenda"><span class="wp-lg-t">Linhas de decolagem:</span>${leg}</div>`:'')
-    +`<div class="wp-info">`
-    +`<span>🧭 <b>${fonte}</b></span>`
-    +`<span>⬆️ <b>${rateMs} m/s</b></span>`
+  const legL=wp.linhas.map(ln=>
+    `<span class="wp-lg"><i style="background:${ln.cor}"></i>${ln.ft} ft · vai p/ ${Math.round(ln.brg)}° · ${ln.s.toFixed(1)} km/h</span>`).join('');
+  document.getElementById('wpLegenda').innerHTML=`<span class="wp-lg-t">Linhas de decolagem:</span>${legL}`;
+  let confDec='';
+  if(c.tipo==='consenso'&&c.jsons.length>1&&wp.linhas.length){
+    const sps=wp.linhas.map(ln=>{
+      const ds=c.jsons.map(j=>{
+        const v=ventoDeModelo(j,h)((ln.ft-c.elevFt)*M_PER_FT);
+        return v?toDir(v.d):null;
+      }).filter(x=>x!=null);
+      return ds.length>1?spreadDir(ds):null;
+    }).filter(x=>x!=null);
+    if(sps.length){
+      const sp=Math.max(...sps);
+      const cls=sp<=20?'alta':sp<=45?'media':'baixa';
+      const rot=sp<=20?'ALTA':sp<=45?'MÉDIA':'BAIXA';
+      confDec=`<span>🎯 conf. decolagem: <span class="conf ${cls}">${rot} ${Math.round(sp)}°</span></span>`;
+    }
+  }
+  document.getElementById('wpInfo').innerHTML=
+    `<span>🧭 <b>${c.fonte}</b></span>`
+    +`<span>🕐 <b>${String(h).padStart(2,'0')}:00</b></span>`
+    +confDec
+    +`<span>⬆️ <b>${c.rateMs} m/s</b></span>`
     +`<span>⛰️ solo: <b>${Math.round(wp.elevFt)} ft</b> (${Math.round(wp.elevFt*M_PER_FT)} m)</span>`
     +`<span>⛔ teto: <b>${TETO} ft</b></span>`
     +`<span>⏱️ solo→teto: <b>${Math.round(wp.totMin)} min</b></span>`
-    +`<span>📏 deriva total: <b>${wp.totKm.toFixed(1)} km</b></span>`
-    +`</div>`);
+    +`<span>📏 deriva total: <b>${wp.totKm.toFixed(1)} km</b></span>`;
+  if(WXJSON){
+    const el=document.querySelector('#saida .wxline');
+    const nova=montarWxLine(WXJSON,h);
+    if(el&&nova)el.outerHTML=nova;
+  }
+  const ventosAlvos=WPTS.map((_,i)=>ventoAlvoEm(i,h)); // null = usa o solo geral como reserva
+  desenharWindpath(wp.inicio,wp.segs,wp.marcas,wp.linhas,ventosAlvos);
+}
+
+// cria os contêineres do mapa no fim da saída, puxa o console e desenha na hora inicial
+function anexarWindpath(out){
+  if(!MAPCTX)return;
+  out.insertAdjacentHTML('beforeend',
+    `<div id="mapaWp"></div>`
+    +`<div class="wp-legenda" id="wpLegenda"></div>`
+    +`<div class="wp-info" id="wpInfo"></div>`);
   const cm=document.getElementById('ctrlMapa');
   if(cm)document.getElementById('mapaWp').before(cm);
-  desenharWindpath([lat0,lon0],wp.segs,wp.marcas,wp.linhas);
+  const sl=document.getElementById('horaSlide');
+  sl.value=MAPCTX.hora;
+  document.getElementById('horaSlideLbl').textContent=String(MAPCTX.hora).padStart(2,'0')+':00';
+  redesenharMapa(MAPCTX.hora);
 }
 
 async function fetchTempo(lat,lon,dia){
@@ -602,11 +803,14 @@ async function rodar(){
   const dia=document.getElementById('dia').value,hora=parseInt(document.getElementById('hora').value,10);
   const modelo=document.getElementById('modelo').value;
   reHomeCtrlMapa();
-  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> buscando…';out.innerHTML='';
+  const btn2=document.getElementById('go2');
+  const setBusy=b=>{[btn,btn2].forEach(x=>{if(!x)return;x.disabled=b;x.innerHTML=b?'<span class="spin">⟳</span> buscando…':'⟳ Gerar';});};
+  setBusy(true);out.innerHTML='';
   try{
     WXLINE='';
     if(TAB!==3){
-      try{const wx=await fetchTempo(lat,lon,dia);WXLINE=montarWxLine(wx,hora);}catch(e){}
+      try{WXJSON=await fetchTempo(lat,lon,dia);WXLINE=montarWxLine(WXJSON,hora);}catch(e){WXJSON=null;}
+      if(WPTS.length&&WPTWX_DIA!==dia)buscarVentoAlvos(dia); // paralelo, sem travar
     }
     if(TAB===0){
       const datas=await Promise.all(BLEND.map(m=>fetchModel(lat,lon,dia,m).catch(()=>null)));
@@ -624,13 +828,12 @@ async function rodar(){
       const t=ok[0].d.hourly.time[hora]?ok[0].d.hourly.time[hora].replace('T',' '):`${dia} ${String(hora).padStart(2,'0')}:00`;
       STATE={kind:0,niveis,cols,soloCells,elev,elevFt,sunrise,sunset,tLabel:t,lat,lon};
       renderPrevisao(out);
-      // Windpath do consenso (média vetorial dos modelos disponíveis)
-      const rateMs=parseFloat(document.getElementById('subida').value)||4;
+      // Windpath do consenso + curvas dos 3 modelos
+      const rateMs=parseFloat(document.getElementById('subida').value)||2;
       const la0=parseFloat(lat),lo0=parseFloat(lon);
       if(!isNaN(la0)&&!isNaN(lo0)){
-        const perfis=cols.map(c=>c.perfil);
-        const wp=montarWindpath(m=>blendAt(perfis,m),elevFt,la0,lo0,rateMs);
-        anexarWindpath(out,wp,la0,lo0,rateMs,`consenso de ${cols.length} modelos`);
+        MAPCTX={tipo:'consenso',jsons:ok.map(o=>o.d),nomes:ok.map(o=>o.name),elevFt,lat0:la0,lon0:lo0,rateMs,hora,fonte:`consenso de ${ok.length} modelos`};
+        anexarWindpath(out);
       }
     }else if(TAB===1){
       const datas=await Promise.all(BLEND.map(m=>fetchModel(lat,lon,dia,m).catch(()=>null)));
@@ -662,15 +865,21 @@ async function rodar(){
         if(v)grade.push({amsl,aglFt:amsl-elevFt,d:v.d,s:v.s});
       }
       let solo=null;const vs=interpPerfil(perfil,0);if(vs)solo={d:vs.d,s:vs.s};
+      // confiança: busca os modelos do consenso em paralelo só para medir o spread por camada
+      let confPerfis=[];
+      try{
+        const confDatas=await Promise.all(BLEND.map(m=>fetchModel(lat,lon,dia,m).catch(()=>null)));
+        confPerfis=confDatas.filter(Boolean).map(o=>perfilDeHourly(o.hourly,o.elevation,hora));
+      }catch(e){}
       const t=data.hourly.time[hora]?data.hourly.time[hora].replace('T',' '):`${dia} ${String(hora).padStart(2,'0')}:00`;
-      STATE={kind:2,grade,solo,elev,elevFt,tLabel:t,sunrise,sunset,model:data.model_used||modelo,perfil,lat,lon};
+      STATE={kind:2,grade,solo,elev,elevFt,tLabel:t,sunrise,sunset,model:data.model_used||modelo,perfil,confPerfis,lat,lon};
       renderPlot(out);
       // Windpath abaixo da plotagem — mesma hora, mesmo modelo
-      const rateMs=parseFloat(document.getElementById('subida').value)||4;
+      const rateMs=parseFloat(document.getElementById('subida').value)||2;
       const la0=parseFloat(lat),lo0=parseFloat(lon);
       if(!isNaN(la0)&&!isNaN(lo0)){
-        const wp=montarWindpath(m=>interpPerfil(perfil,m),elevFt,la0,lo0,rateMs);
-        anexarWindpath(out,wp,la0,lo0,rateMs,STATE.model||'modelo');
+        MAPCTX={tipo:'modelo',jsons:[data],nomes:[STATE.model||'modelo'],elevFt,lat0:la0,lon0:lo0,rateMs,hora,fonte:STATE.model||'modelo'};
+        anexarWindpath(out);
       }
     }else{
       // Aba 4 — Dias: paralelo por dia, voo da manhã (nascer do sol), consenso 3 modelos
@@ -696,6 +905,7 @@ async function rodar(){
       const dias=ok[0].daily?.time||[];
       const sunrises=ok[0].daily?.sunrise||[];
       const sunsets=ok[0].daily?.sunset||[];
+      const diario=(chave,di)=>{for(const o of ok){const v=o.daily?.[chave]?.[di];if(v!=null)return v;}return null;};
       const niveis=[];const baseFt=Math.ceil(elevFt/500)*500;
       for(let amsl=baseFt;amsl<=TOPO;amsl+=500)niveis.push(amsl);
       const cols=dias.map((diaStr,di)=>{
@@ -708,7 +918,10 @@ async function rodar(){
         const perfis=ok.map(d=>perfilDeHourly(d.hourly,d.elevation,i));
         const cells=niveis.map(amsl=>blendAt(perfis,(amsl-elevFt)*M_PER_FT));
         const dd=diaStr.slice(8,10),mm=diaStr.slice(5,7);
-        return{label:`${dd}/${mm}`,sr:sr.slice(11,16),ss:(sunsets[di]||'').slice(11,16),cells};
+        const wc=diario('weather_code',di), mm2=diario('precipitation_sum',di), pp=diario('precipitation_probability_max',di);
+        const wx=wc!=null?tempoWMO(wc)[0]:'';
+        const chuva=mm2!=null?`${mm2<10?mm2.toFixed(1):Math.round(mm2)}mm`:(pp!=null?`${pp}%`:'');
+        return{label:`${dd}/${mm}`,sr:sr.slice(11,16),ss:(sunsets[di]||'').slice(11,16),wx,chuva,cells};
       });
       STATE={kind:3,niveis,cols,elev,elevFt,nModelos:ok.length,lat,lon,tLabel:`${dias[0]||de} → ${dias[dias.length-1]||ate}`,aviso};
       renderDias(out);
@@ -716,7 +929,7 @@ async function rodar(){
   }catch(e){
     out.innerHTML=`<div class="err"><b>Falhou:</b> ${e.message}<br><br>Verifique conexão/coordenada. Se persistir, troque o modelo.</div>`;
   }finally{
-    btn.disabled=false;btn.innerHTML='⟳ Gerar';
+    setBusy(false);
   }
 }
 
@@ -741,23 +954,31 @@ function corAltura(amsl, minA, maxA){
   const hue = 120 - Math.round(120*Math.min(1,Math.max(0,t))); // 120=verde -> 0=vermelho
   return `hsl(${hue},85%,55%)`;
 }
-// marcadores de velocidade: índice do mais forte, mais fraco e intermediário (mediana)
+// marcadores de velocidade: índice do mais forte e do mais fraco
+function spreadDir(dirs){
+  let m=0;
+  for(let i=0;i<dirs.length;i++)for(let j=i+1;j<dirs.length;j++){
+    let d=Math.abs(dirs[i]-dirs[j]); if(d>180)d=360-d; if(d>m)m=d;
+  }
+  return m;
+}
+function seloConf(cells){
+  const dirs=cells.filter(Boolean).map(c=>c.d);
+  if(dirs.length<2)return '<td>—</td>';
+  const sp=spreadDir(dirs);
+  const cls=sp<=20?'alta':sp<=45?'media':'baixa';
+  const rot=sp<=20?'ALTA':sp<=45?'MÉDIA':'BAIXA';
+  return `<td><span class="conf ${cls}">${rot} ${Math.round(sp)}°</span></td>`;
+}
+
 function marcadores(speeds){
   const val=speeds.map((s,i)=>({s,i})).filter(x=>x.s!=null);
-  if(val.length<2) return {max:-1,min:-1,mid:-1};
+  if(val.length<2) return {max:-1,min:-1};
   const ord=val.slice().sort((a,b)=>a.s-b.s);
-  const min=ord[0].i, max=ord[ord.length-1].i;
-  const mediana=ord[Math.floor(ord.length/2)].s;
-  let mid=-1,melhor=Infinity;
-  val.forEach(x=>{
-    if(x.i===min||x.i===max) return;
-    const d=Math.abs(x.s-mediana);
-    if(d<melhor){melhor=d;mid=x.i;}
-  });
-  return {max,min,mid};
+  return {max:ord[ord.length-1].i, min:ord[0].i};
 }
-const MK={max:'<span class="mk mkmax">⚡</span>',min:'<span class="mk mkmin">🐢</span>',mid:'<span class="mk mkmid">●</span>'};
-function marcaDe(i,m){ return i===m.max?MK.max : i===m.min?MK.min : i===m.mid?MK.mid : ''; }
+const MK={max:'<span class="mk mkmax">⚡</span>',min:'<span class="mk mkmin">🐢</span>'};
+function marcaDe(i,m){ return i===m.max?MK.max : i===m.min?MK.min : ''; }
 function printHead(s){
   return `<div class="printhead">
     <div class="ph-t">RVB Team 🎈 · Indianola IA · Perfil de Vento — ${TABNOME[s.kind]}</div>
@@ -788,6 +1009,7 @@ function renderPrevisao(out){
   const s=STATE;
   let head=`<th>AMSL</th>`;
   s.cols.forEach(c=>head+=`<th>${c.label}</th>`);
+  head+=`<th>Conf.</th>`;
   let rows='';
   const minA=s.niveis[0], maxA=s.niveis[s.niveis.length-1];
   const marc=s.cols.map(c=>marcadores(c.cells.map(x=>x?x.s:null)));
@@ -803,6 +1025,7 @@ function renderPrevisao(out){
       tds+=`<td>${seta(toDir(cell.d),cor)}<span class="vai">${Math.round(toDir(cell.d))}°</span> / <span class="vem">${Math.round(cell.d)}°</span>`
         +`<br><span class="spd">${cell.s.toFixed(0)} km/h</span>${mk}</td>`;
     });
+    tds+=seloConf(s.cols.map(c=>c.cells[ri]));
     rows+=`<tr class="${rowClass(amsl)}">${tds}</tr>`;
   });
   let soloTds=`<td class="amsl">SOLO ~${Math.round(s.elevFt)} ft</td>`;
@@ -812,6 +1035,7 @@ function renderPrevisao(out){
       ? `<td>${seta(toDir(cell.d),corAltura(minA,minA,maxA))}<span class="vai">${Math.round(toDir(cell.d))}°</span> / <span class="vem">${Math.round(cell.d)}°</span><br><span class="spd">${cell.s.toFixed(0)} km/h</span></td>`
       : `<td>—</td>`;
   });
+  soloTds+=seloConf(s.soloCells);
   rows+=`<tr class="solo">${soloTds}</tr>`;
   const btnsModelo=s.cols.map((c,ci)=>
     `<button class="btn-dat btn-mod" onclick="exportarModelo(${ci})">⬇ .dat ${c.label}</button>`
@@ -820,7 +1044,7 @@ function renderPrevisao(out){
     +`<div class="gridwrap"><table class="evo"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
     +`<div class="modrow">${btnsModelo}</div>`
     +btnPDF
-    +`<div class="legend">Ordem <b>invertida</b>: mais alto em cima, solo embaixo. Seta em <b>degradê por altura</b> (verde na base → vermelho no topo). Marcadores por coluna: <b class="kx">⚡ mais forte</b> · <b class="km">🐢 mais fraco</b> · <b class="kd">● intermediário</b>. 250 ft até 8.500 ft AMSL · <b class="kt">teto 8.000 ft</b>. Destaques a cada 1.000 ft: <b class="k1">3.000/4.000/5.000/6.000/7.000</b>.<br><b>Exporte o .dat do modelo que estiver batendo melhor</b> com a sua medição (copinho/drone) — mesmo formato da aba 3: AMSL, 250 ft, direção indo para.<br>⚠️ Previsão, não medição.</div>`;
+    +`<div class="legend">Ordem <b>invertida</b>: mais alto em cima, solo embaixo. Seta em <b>degradê por altura</b> (verde na base → vermelho no topo). Marcadores por coluna: <b class="kx">⚡ mais forte</b> · <b class="km">🐢 mais fraco</b>. 250 ft até 8.500 ft AMSL · <b class="kt">teto 8.000 ft</b>. Destaques a cada 1.000 ft: <b class="k1">3.000/4.000/5.000/6.000/7.000</b>.<br><b>Exporte o .dat do modelo que estiver batendo melhor</b> com a sua medição (copinho/drone) — mesmo formato da aba 3: AMSL, 250 ft, direção indo para.<br><b>Conf.</b> = concordância de direção entre os modelos: <span class="conf alta">ALTA ≤20°</span> <span class="conf media">MÉDIA ≤45°</span> <span class="conf baixa">BAIXA &gt;45°</span> — confiança BAIXA em tempo virando (chuva/frente) significa: confie no que você vê, não no modelo.<br>⚠️ Previsão, não medição.</div>`;
 }
 
 function renderEvo(out){
@@ -842,6 +1066,7 @@ function renderEvo(out){
       tds+=`<td>${seta(toDir(cell.d),cor)}<span class="vai">${Math.round(toDir(cell.d))}°</span>`
         +`<br><span class="spd">${cell.s.toFixed(0)} km/h</span>${mk}</td>`;
     });
+    tds+=seloConf(s.cols.map(c=>c.cells[ri]));
     rows+=`<tr class="${rowClass(amsl)}">${tds}</tr>`;
   });
   let soloTds=`<td class="amsl">SOLO ~${Math.round(s.elevFt)} ft</td>`;
@@ -854,13 +1079,13 @@ function renderEvo(out){
   out.innerHTML=printHead(s)+meta(s)
     +`<div class="gridwrap"><table class="evo"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
     +btnPDF
-    +`<div class="legend">Ordem <b>invertida</b>: mais alto em cima. Seta em <b>degradê por altura</b> (verde base → vermelho topo). Consenso de ${s.nModelos} modelos, nascer do sol (☀) a +3h, 500 ft até 8.500 ft · <b class="kt">teto 8.000 ft</b>. Marcadores por horário: <b class="kx">⚡ mais forte</b> · <b class="km">🐢 mais fraco</b> · <b class="kd">● intermediário</b>. Destaques a cada 1.000 ft.<br>⚠️ Previsão, não medição.</div>`;
+    +`<div class="legend">Ordem <b>invertida</b>: mais alto em cima. Seta em <b>degradê por altura</b> (verde base → vermelho topo). Consenso de ${s.nModelos} modelos, nascer do sol (☀) a +3h, 500 ft até 8.500 ft · <b class="kt">teto 8.000 ft</b>. Marcadores por horário: <b class="kx">⚡ mais forte</b> · <b class="km">🐢 mais fraco</b>. Destaques a cada 1.000 ft.<br>⚠️ Previsão, não medição.</div>`;
 }
 
 function renderDias(out){
   const s=STATE;
   let head=`<th>AMSL</th>`;
-  s.cols.forEach(c=>head+=`<th>${c.label}${c.sr?`<br><span style="color:var(--dim);font-weight:400">☀${c.sr}</span>`:``}${c.ss?`<br><span style="color:var(--dim);font-weight:400">🌇${c.ss}</span>`:``}</th>`);
+  s.cols.forEach(c=>head+=`<th>${c.label}${c.sr?`<br><span style="color:var(--dim);font-weight:400">☀${c.sr}</span>`:``}${c.ss?`<br><span style="color:var(--dim);font-weight:400">🌇${c.ss}</span>`:``}${c.wx||c.chuva?`<br><span style="font-weight:600">${c.wx}${c.chuva?` 💧${c.chuva}`:``}</span>`:``}</th>`);
   let rows='';
   const minA=s.niveis[0], maxA=s.niveis[s.niveis.length-1];
   const idx=s.niveis.map((_,i)=>i).reverse();
@@ -880,7 +1105,7 @@ function renderDias(out){
     +(s.aviso?`<div class="err" style="background:rgba(255,210,63,.1);border-color:rgba(255,210,63,.4);color:#ffe08a;">${s.aviso}</div>`:'')
     +`<div class="gridwrap"><table class="evo"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`
     +btnPDF
-    +`<div class="legend">Paralelo por dia do evento (☀ = nascer do sol, voo da manhã), consenso de ${s.nModelos} modelos, 500 ft até 8.500 ft · <b class="kt">teto 8.000 ft</b>. Cada célula: <b class="kv">pra onde vai°</b> em cima, velocidade (km/h) embaixo; seta em degradê por altura. <br>Veja a variação do vento ao longo dos dias do National Balloon Classic. ⚠️ Quanto mais longe o dia, menor a confiança — os últimos dias são tendência. Role na horizontal.</div>`;
+    +`<div class="legend">Paralelo por dia do evento (☀ = nascer do sol, voo da manhã), consenso de ${s.nModelos} modelos, 500 ft até 8.500 ft · <b class="kt">teto 8.000 ft</b>. Cada célula: <b class="kv">pra onde vai°</b> em cima, velocidade (km/h) embaixo; seta em degradê por altura. No topo de cada dia: ☀ nascer, 🌇 pôr, céu previsto e 💧 chuva acumulada do dia (mm). <br>Veja a variação do vento ao longo dos dias do National Balloon Classic. ⚠️ Quanto mais longe o dia, menor a confiança — os últimos dias são tendência. Role na horizontal.</div>`;
 }
 
 
@@ -893,18 +1118,20 @@ function renderPlot(out){
     const mk=marcaDe(i,marc);
     rows+=`<tr class="${rowClass(l.amsl)}"><td class="amsl">${amslLabel(l.amsl)}</td><td>${Math.round(l.aglFt)} ft</td>`
       +`<td>${seta(toDir(l.d),cor)}<span class="vai">${Math.round(toDir(l.d))}°</span></td><td><span class="vem">${Math.round(l.d)}°</span></td>`
-      +`<td class="spd">${l.s.toFixed(1)} km/h${mk}</td></tr>`;
+      +`<td class="spd">${l.s.toFixed(1)} km/h${mk}</td>`
+      +seloConf((s.confPerfis||[]).map(p=>interpPerfil(p,(l.amsl-s.elevFt)*M_PER_FT)))+`</tr>`;
   });
   if(s.solo){
     rows+=`<tr class="solo"><td class="amsl">SOLO ~${Math.round(s.elevFt)} ft</td><td>0 ft</td>`
       +`<td>${seta(toDir(s.solo.d),corAltura(minA,minA,maxA))}<span class="vai">${Math.round(toDir(s.solo.d))}°</span></td><td><span class="vem">${Math.round(s.solo.d)}°</span></td>`
-      +`<td class="spd">${s.solo.s.toFixed(1)} km/h</td></tr>`;
+      +`<td class="spd">${s.solo.s.toFixed(1)} km/h</td>`
+      +seloConf((s.confPerfis||[]).map(p=>interpPerfil(p,0)))+`</tr>`;
   }
   out.innerHTML=printHead(s)+meta(s)
-    +`<table><thead><tr><th>AMSL</th><th>AGL</th><th>Vai →</th><th>Vem ←</th><th>Velocidade</th></tr></thead><tbody>${rows}</tbody></table>`
+    +`<table><thead><tr><th>AMSL</th><th>AGL</th><th>Vai →</th><th>Vem ←</th><th>Velocidade</th><th>Conf.</th></tr></thead><tbody>${rows}</tbody></table>`
     +`<button class="btn-dat" onclick="exportarDat()">⬇ Exportar .dat (oziTarget / WindReader) — 250 ft até 6000 ft</button>`
     +btnPDF
-    +`<div class="legend">Ordem <b>invertida</b>: mais alto em cima, solo embaixo. Seta em <b>degradê por altura</b> (verde base → vermelho topo). <b class="kv">Vai →</b> pra onde leva · <span class="vem">Vem ←</span> de onde sopra. Marcadores: <b class="kx">⚡ mais forte</b> · <b class="km">🐢 mais fraco</b> · <b class="kd">● intermediário</b>. 250 ft do solo até 8.500 ft AMSL · <b class="kt">teto 8.000 ft</b>. <b>SOLO</b> = estimativa.<br>O <b>.dat</b> sai sem cabeçalho, com coluna <b>AMSL [ft]</b> (nível do mar) e direção <b>indo para</b> (To).<br>⚠️ Previsão de modelo, não medição.</div>`;
+    +`<div class="legend">Ordem <b>invertida</b>: mais alto em cima, solo embaixo. Seta em <b>degradê por altura</b> (verde base → vermelho topo). <b class="kv">Vai →</b> pra onde leva · <span class="vem">Vem ←</span> de onde sopra. Marcadores: <b class="kx">⚡ mais forte</b> · <b class="km">🐢 mais fraco</b>. 250 ft do solo até 8.500 ft AMSL · <b class="kt">teto 8.000 ft</b>. <b>SOLO</b> = estimativa. <b>Conf.</b> = concordância de direção entre os modelos naquela camada (mesma régua da aba 1).<br>O <b>.dat</b> sai sem cabeçalho, com coluna <b>AMSL [ft]</b> (nível do mar) e direção <b>indo para</b> (To).<br>⚠️ Previsão de modelo, não medição.</div>`;
 }
 
 // gera e baixa o .dat a partir de um perfil qualquer (usado pela aba 3 e por modelo na aba 1)
